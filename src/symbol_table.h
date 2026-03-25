@@ -5,6 +5,8 @@
 #define MAX_PARAMS 16
 #define NAME_SIZE 64
 
+typedef struct ASTStmt ASTStmt;
+
 typedef enum {
     TYPE_UNKNOWN = 0,
     TYPE_INT,
@@ -22,15 +24,25 @@ typedef enum {
 } SymbolKind;
 
 typedef struct {
+    DataType type;
+    double num_val;
+    char *str_val;
+    char char_val;
+} RuntimeValue;
+
+typedef struct {
     char name[NAME_SIZE];
     DataType type;
     SymbolKind kind;
     int scope_level;
 
-    /* For functions */
+    RuntimeValue value;
+
     int param_count;
     DataType param_types[MAX_PARAMS];
+    char param_names[MAX_PARAMS][NAME_SIZE];
     DataType return_type;
+    ASTStmt *function_body;
 } Symbol;
 
 void init_symbol_table(void);
@@ -54,6 +66,11 @@ int in_function_context(void);
 const char* current_function_name(void);
 
 int register_return_type(DataType t);
+void set_current_function_body(ASTStmt *body);
+
+void set_symbol_numeric(Symbol *s, double value);
+void set_symbol_string(Symbol *s, const char *value);
+void set_symbol_char(Symbol *s, char value);
 
 const char* type_name(DataType t);
 int is_numeric_type(DataType t);

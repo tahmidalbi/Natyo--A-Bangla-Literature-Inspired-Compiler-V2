@@ -44,19 +44,22 @@ extern int yydebug;
 #line 1 "src/parser.y"
 
     #include "symbol_table.h"
+    #include "ast.h"
 
     typedef struct {
         DataType type;
+        ASTExpr *node;
     } ExprAttr;
 
     typedef struct {
         int count;
         DataType types[MAX_PARAMS];
+        ASTArgList *nodes;
     } ArgListAttr;
 
 
 /* Line 2058 of yacc.c  */
-#line 60 "parser.tab.h"
+#line 63 "parser.tab.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -112,7 +115,7 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 2058 of yacc.c  */
-#line 36 "src/parser.y"
+#line 42 "src/parser.y"
 
     int ival;
     double fval;
@@ -120,10 +123,13 @@ typedef union YYSTYPE
     char *sval;
     ExprAttr expr;
     ArgListAttr args;
+    ASTStmt *stmt;
+    ASTIdentifierList *idlist;
+    ASTTopLevel *top;
 
 
 /* Line 2058 of yacc.c  */
-#line 127 "parser.tab.h"
+#line 133 "parser.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

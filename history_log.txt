@@ -1,0 +1,2 @@
+Scene 1: Variable 'a' updated to 5.000000
+Scene 2: Variable 'b' updated to 7.000000

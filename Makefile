@@ -1,18 +1,24 @@
 CC = gcc
+CFLAGS = -Wall -Wextra -std=c11 -Isrc
 
-all: lexer_app
+BISON = win_bison
+FLEX = win_flex
 
-lexer_app: lex.yy.c src/lexer_main.c
-	$(CC) lex.yy.c src/lexer_main.c -o lexer_app
+TARGET = natyo
 
-lex.yy.c: src/lexer.l src/token_debug.h
-	flex -o lex.yy.c src/lexer.l
+all: $(TARGET)
 
-run-valid: lexer_app
-	./lexer_app tests/phase2_valid.nt
+$(TARGET): lex.yy.c parser.tab.c src/symbol_table.c src/ast.c src/interpreter.c src/utils.c
+	$(CC) $(CFLAGS) lex.yy.c parser.tab.c src/symbol_table.c src/ast.c src/interpreter.c src/utils.c -o $(TARGET) -lm
 
-run-invalid: lexer_app
-	./lexer_app tests/phase2_invalid.nt
+parser.tab.c parser.tab.h: src/parser.y
+	$(BISON) -d -o parser.tab.c src/parser.y
+
+lex.yy.c: src/lexer.l parser.tab.h
+	$(FLEX) -o lex.yy.c src/lexer.l
 
 clean:
-	rm -f lex.yy.c lexer_app
+	del /Q lex.yy.c parser.tab.c parser.tab.h $(TARGET).exe history_log.txt 2>nul || exit 0
+
+run:
+	$(TARGET).exe tests/phase4_valid.nt
