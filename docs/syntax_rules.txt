@@ -1,0 +1,82 @@
+Natyo Syntax Rules (FINAL)
+
+1. Program Structure
+
+A program must start with:
+    prostabona
+
+A program must end with:
+    uposhonghar
+
+Inside the program, all code must be written inside a drissho block.
+
+Example:
+prostabona
+    drissho main {
+        statements...
+    }
+uposhonghar
+
+
+2. drissho (Scene / Block)
+
+drissho is used to define a block of code.
+
+Syntax:
+    drissho name {
+        statements
+    }
+
+Example:
+    drissho main {
+        shonkhya a = 5;
+        shobdo a;
+    }
+
+
+3. Variable Declaration
+
+Integer:
+    shonkhya a = 5;
+
+Float:
+    purnoshonkhya b = 3.2;
+
+
+4. Assignment
+
+    a = 10;
+
+
+5. Print Statement
+
+    shobdo a;
+    shobdo a + 2;
+
+
+6. Conditional
+
+    jodi (a > 2) {
+        shobdo a;
+    }
+    onnotha {
+        shobdo 0;
+    }
+
+
+7. Loop
+
+    chokro (i = 0; i < 5; i = i + 1) {
+        shobdo i;
+    }
+
+
+8. Math Functions
+
+    shakti(2, 3)
+    borgomul(16)
+
+
+9. Important Rule
+
+Every executable statement must be inside a drissho block.

@@ -1,0 +1,9 @@
+prostabona
+    drissho main {
+        shonkhya i = 0;
+
+        chokro (i = 0; i < 5; i = i + 1) {
+            shobdo i;
+        }
+    }
+uposhonghar

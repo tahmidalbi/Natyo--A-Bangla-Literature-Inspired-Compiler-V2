@@ -1,0 +1,12 @@
+prostabona
+    drissho main {
+        shonkhya a = 10;
+
+        jodi (a > 2) {
+            shobdo a;
+        }
+        onnotha {
+            shobdo 0;
+        }
+    }
+uposhonghar

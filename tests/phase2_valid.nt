@@ -1,0 +1,25 @@
+prostabona
+
+shonkhya a = 5;
+purnoshonkhya b = 3.14;
+
+shobdo a;
+shobdo b;
+
+jodi (a > 2)
+    shobdo a;
+onnotha
+    shobdo b;
+
+chokro (a = 0; a < 3; a = a + 1)
+    shobdo a;
+
+shobdo shakti(2, 3);
+shobdo borgomul(25);
+
+shobdo PAI;
+shobdo E;
+shobdo G;
+
+uposhonghar
+drissho

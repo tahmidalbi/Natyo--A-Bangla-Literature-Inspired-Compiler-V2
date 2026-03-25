@@ -1,0 +1,45 @@
+Natyo Grammar Draft (FINAL)
+
+program
+    -> prostabona drissho_block uposhonghar
+
+drissho_block
+    -> drissho IDENTIFIER { statements }
+
+statements
+    -> statements statement
+    -> statement
+
+statement
+    -> declaration
+    -> assignment
+    -> print_statement
+    -> if_statement
+    -> loop_statement
+
+declaration
+    -> shonkhya IDENTIFIER = expression ;
+    -> purnoshonkhya IDENTIFIER = expression ;
+
+assignment
+    -> IDENTIFIER = expression ;
+
+print_statement
+    -> shobdo expression ;
+
+if_statement
+    -> jodi ( condition ) { statements }
+    -> jodi ( condition ) { statements } onnotha { statements }
+
+loop_statement
+    -> chokro ( assignment ; condition ; assignment ) { statements }
+
+expression
+    -> expression + expression
+    -> expression - expression
+    -> expression * expression
+    -> expression / expression
+    -> NUMBER
+    -> IDENTIFIER
+    -> shakti ( expression , expression )
+    -> borgomul ( expression )

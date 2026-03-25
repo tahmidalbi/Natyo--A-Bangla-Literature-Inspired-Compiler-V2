@@ -1,0 +1,44 @@
+#ifndef TOKEN_DEBUG_H
+#define TOKEN_DEBUG_H
+
+enum TokenType {
+    TOK_PROSTABONA = 256,
+    TOK_UPOSHONGHAR,
+    TOK_DRISSHO,
+    TOK_SHONKHYA,
+    TOK_PURNOSHONKHYA,
+    TOK_SHOBDO,
+    TOK_JOBDO,
+    TOK_JODI,
+    TOK_ONNOTHA,
+    TOK_CHOKRO,
+    TOK_SHAKTI,
+    TOK_BORGOMUL,
+
+    TOK_IDENTIFIER,
+    TOK_INT_LITERAL,
+    TOK_FLOAT_LITERAL,
+
+    TOK_ASSIGN,
+    TOK_PLUS,
+    TOK_MINUS,
+    TOK_MULT,
+    TOK_DIV,
+    TOK_MOD,
+
+    TOK_GT,
+    TOK_LT,
+    TOK_GEQ,
+    TOK_LEQ,
+    TOK_EQ,
+    TOK_NEQ,
+
+    TOK_SEMICOLON,
+    TOK_COMMA,
+    TOK_LPAREN,
+    TOK_RPAREN,
+    TOK_LBRACE,
+    TOK_RBRACE
+};
+
+#endif

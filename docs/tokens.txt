@@ -1,0 +1,74 @@
+Natyo Token List
+
+A token is the smallest meaningful part of the language.
+
+1. Keywords
+These are reserved words with special meaning:
+- prostabona
+- uposhonghar
+- drissho
+- shonkhya
+- purnoshonkhya
+- shobdo
+- jobdo
+- jodi
+- onnotha
+- chokro
+- shakti
+- borgomul
+
+2. Identifiers
+Identifiers are names chosen by the programmer for variables.
+
+Examples:
+- a
+- total
+- count
+- result
+
+Rules for identifiers:
+- must start with a letter or underscore
+- can contain letters, digits, and underscore
+- cannot be a keyword
+
+3. Numbers
+Integer examples:
+- 5
+- 100
+- 0
+
+Float examples:
+- 3.14
+- 2.5
+- 10.0
+
+4. Operators
+Arithmetic operators:
+- +
+- -
+- *
+- /
+- %
+
+Assignment operator:
+- =
+
+Relational operators:
+- >
+- <
+- >=
+- <=
+- ==
+- !=
+
+5. Symbols / Punctuation
+- ;
+- (
+- )
+- {
+- }
+- ,
+
+6. Special Notes
+- whitespace (space, tab, newline) separates tokens
+- invalid characters should later be reported as lexical errors
