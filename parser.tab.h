@@ -39,6 +39,24 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+/* Line 2058 of yacc.c  */
+#line 1 "src/parser.y"
+
+    #include "symbol_table.h"
+
+    typedef struct {
+        DataType type;
+    } ExprAttr;
+
+    typedef struct {
+        int count;
+        DataType types[MAX_PARAMS];
+    } ArgListAttr;
+
+
+/* Line 2058 of yacc.c  */
+#line 60 "parser.tab.h"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -94,16 +112,18 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 2058 of yacc.c  */
-#line 14 "src/parser.y"
+#line 36 "src/parser.y"
 
     int ival;
     double fval;
     char cval;
     char *sval;
+    ExprAttr expr;
+    ArgListAttr args;
 
 
 /* Line 2058 of yacc.c  */
-#line 107 "parser.tab.h"
+#line 127 "parser.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

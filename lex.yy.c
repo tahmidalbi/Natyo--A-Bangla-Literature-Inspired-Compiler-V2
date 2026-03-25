@@ -1155,30 +1155,21 @@ YY_RULE_SETUP
 case 40:
 YY_RULE_SETUP
 #line 94 "src/lexer.l"
-{
-                                yylval.sval = strdup(yytext);
-                                return IDENTIFIER;
-                            }
+{ yylval.sval = strdup(yytext); return IDENTIFIER; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 99 "src/lexer.l"
-{
-                                yylval.sval = strdup(yytext);
-                                return IDENTIFIER;
-                            }
+#line 95 "src/lexer.l"
+{ yylval.sval = strdup(yytext); return IDENTIFIER; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 104 "src/lexer.l"
-{
-                                yylval.sval = strdup(yytext);
-                                return IDENTIFIER;
-                            }
+#line 96 "src/lexer.l"
+{ yylval.sval = strdup(yytext); return IDENTIFIER; }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 109 "src/lexer.l"
+#line 98 "src/lexer.l"
 {
                                 yylval.sval = strdup(yytext);
                                 return IDENTIFIER;
@@ -1187,12 +1178,12 @@ YY_RULE_SETUP
 case 44:
 /* rule 44 can match eol */
 YY_RULE_SETUP
-#line 114 "src/lexer.l"
-{ /* ignore whitespace */ }
+#line 103 "src/lexer.l"
+{ }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 116 "src/lexer.l"
+#line 105 "src/lexer.l"
 {
                                 fprintf(stderr,
                                         "Lexical Error: Invalid token '%s' at line %d\n",
@@ -1201,10 +1192,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 122 "src/lexer.l"
+#line 111 "src/lexer.l"
 ECHO;
 	YY_BREAK
-#line 1207 "lex.yy.c"
+#line 1198 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2217,5 +2208,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 122 "src/lexer.l"
+#line 111 "src/lexer.l"
 

@@ -1,0 +1,42 @@
+$$ valid semantic program
+
+prostabona
+
+shonkhya a = 5;
+purnoshonkhya b = 3.5;
+bakkyo msg = "Hello";
+okkhyor c = 'A';
+
+a = 10;
+b = a + b;
+b = shakti(a, 2);
+b = borgomul(25);
+
+drissho jog(x, y)
+shuru
+    shonkhya z = 10;
+    pherot x + y;
+shesh
+
+shobdo a;
+shobdo b;
+shobdo msg;
+shobdo c;
+shobdo PAI;
+
+jodi (a < 20)
+shuru
+    shonkhya temp = 1;
+    shobdo temp;
+shesh
+onnotha
+shuru
+    shobdo a;
+shesh
+
+chokro (a = 0; a < 3; a = a + 1)
+shuru
+    shobdo a;
+shesh
+
+uposhonghar

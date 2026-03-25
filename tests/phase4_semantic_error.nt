@@ -1,0 +1,23 @@
+prostabona
+
+shonkhya a = 5;
+shonkhya a = 10;          $$ redeclaration
+
+bakkyo msg = "Hello";
+okkhyor c = 'A';
+
+x = 20;                   $$ undeclared variable
+
+drissho bad(x)
+shuru
+    pherot "hello";
+    pherot 5;
+shesh
+
+shonkhya k = msg + 2;     $$ invalid arithmetic
+jodi (msg > 2)
+shuru
+    shobdo msg;
+shesh
+
+uposhonghar

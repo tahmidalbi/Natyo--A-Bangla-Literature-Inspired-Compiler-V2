@@ -91,27 +91,16 @@ CHARLIT     \'([^\\\n]|(\\.))\'
 "("                         { return LPAREN; }
 ")"                         { return RPAREN; }
 
-"PAI"                       {
-                                yylval.sval = strdup(yytext);
-                                return IDENTIFIER;
-                            }
-
-"E"                         {
-                                yylval.sval = strdup(yytext);
-                                return IDENTIFIER;
-                            }
-
-"G"                         {
-                                yylval.sval = strdup(yytext);
-                                return IDENTIFIER;
-                            }
+"PAI"                       { yylval.sval = strdup(yytext); return IDENTIFIER; }
+"E"                         { yylval.sval = strdup(yytext); return IDENTIFIER; }
+"G"                         { yylval.sval = strdup(yytext); return IDENTIFIER; }
 
 {ID}                        {
                                 yylval.sval = strdup(yytext);
                                 return IDENTIFIER;
                             }
 
-[ \t\r\n]+                  { /* ignore whitespace */ }
+[ \t\r\n]+                  { }
 
 .                           {
                                 fprintf(stderr,
