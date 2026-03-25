@@ -22,6 +22,8 @@
 #include "ast.h"
 #include "interpreter.h"
 #include "utils.h"
+#include "optimizer.h"
+#include "tac.h"
 
 int yylex(void);
 void yyerror(const char *s);
@@ -94,6 +96,12 @@ program
 
           if (semantic_errors == 0) {
               printf("Semantic Analysis Successful: program is meaningful.\n");
+
+              optimize_program(program_root);
+              generate_tac(program_root, "tac_output.txt");
+              printf("Optimization complete: constant folding applied where possible.\n");
+              printf("TAC generated in tac_output.txt\n");
+
               reset_history_log();
               interpret_program(program_root);
           } else {

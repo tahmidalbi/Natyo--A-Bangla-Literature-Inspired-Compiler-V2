@@ -72,6 +72,8 @@
 #include "ast.h"
 #include "interpreter.h"
 #include "utils.h"
+#include "optimizer.h"
+#include "tac.h"
 
 int yylex(void);
 void yyerror(const char *s);
@@ -89,7 +91,7 @@ void semantic_error(const char *msg) {
 }
 
 /* Line 371 of yacc.c  */
-#line 93 "parser.tab.c"
+#line 95 "parser.tab.c"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -138,7 +140,7 @@ extern int yydebug;
 
 
 /* Line 387 of yacc.c  */
-#line 142 "parser.tab.c"
+#line 144 "parser.tab.c"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -194,7 +196,7 @@ extern int yydebug;
 typedef union YYSTYPE
 {
 /* Line 387 of yacc.c  */
-#line 42 "src/parser.y"
+#line 44 "src/parser.y"
 
     int ival;
     double fval;
@@ -208,7 +210,7 @@ typedef union YYSTYPE
 
 
 /* Line 387 of yacc.c  */
-#line 212 "parser.tab.c"
+#line 214 "parser.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -236,7 +238,7 @@ int yyparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 390 of yacc.c  */
-#line 240 "parser.tab.c"
+#line 242 "parser.tab.c"
 
 #ifdef short
 # undef short
@@ -558,14 +560,14 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    91,    91,   107,   110,   117,   121,   129,   128,   145,
-     153,   156,   163,   170,   180,   188,   191,   198,   202,   206,
-     210,   214,   218,   222,   226,   230,   238,   237,   246,   245,
-     253,   257,   264,   271,   283,   290,   300,   307,   317,   329,
-     341,   356,   360,   364,   371,   381,   390,   399,   411,   418,
-     428,   438,   464,   468,   475,   479,   501,   507,   513,   522,
-     529,   536,   543,   550,   560,   568,   576,   584,   592,   600,
-     608,   618,   623,   633,   643,   648,   653,   658
+       0,    93,    93,   115,   118,   125,   129,   137,   136,   153,
+     161,   164,   171,   178,   188,   196,   199,   206,   210,   214,
+     218,   222,   226,   230,   234,   238,   246,   245,   254,   253,
+     261,   265,   272,   279,   291,   298,   308,   315,   325,   337,
+     349,   364,   368,   372,   379,   389,   398,   407,   419,   426,
+     436,   446,   472,   476,   483,   487,   509,   515,   521,   530,
+     537,   544,   551,   558,   568,   576,   584,   592,   600,   608,
+     616,   626,   631,   641,   651,   656,   661,   666
 };
 #endif
 
@@ -1582,12 +1584,18 @@ yyreduce:
     {
         case 2:
 /* Line 1792 of yacc.c  */
-#line 92 "src/parser.y"
+#line 94 "src/parser.y"
     {
           program_root = (yyvsp[(2) - (3)].top);
 
           if (semantic_errors == 0) {
               printf("Semantic Analysis Successful: program is meaningful.\n");
+
+              optimize_program(program_root);
+              generate_tac(program_root, "tac_output.txt");
+              printf("Optimization complete: constant folding applied where possible.\n");
+              printf("TAC generated in tac_output.txt\n");
+
               reset_history_log();
               interpret_program(program_root);
           } else {
@@ -1598,7 +1606,7 @@ yyreduce:
 
   case 3:
 /* Line 1792 of yacc.c  */
-#line 107 "src/parser.y"
+#line 115 "src/parser.y"
     {
           (yyval.top) = NULL;
       }
@@ -1606,7 +1614,7 @@ yyreduce:
 
   case 4:
 /* Line 1792 of yacc.c  */
-#line 111 "src/parser.y"
+#line 119 "src/parser.y"
     {
           (yyval.top) = append_top((yyvsp[(1) - (2)].top), (yyvsp[(2) - (2)].top));
       }
@@ -1614,7 +1622,7 @@ yyreduce:
 
   case 5:
 /* Line 1792 of yacc.c  */
-#line 118 "src/parser.y"
+#line 126 "src/parser.y"
     {
           (yyval.top) = make_top_stmt((yyvsp[(1) - (1)].stmt));
       }
@@ -1622,7 +1630,7 @@ yyreduce:
 
   case 6:
 /* Line 1792 of yacc.c  */
-#line 122 "src/parser.y"
+#line 130 "src/parser.y"
     {
           (yyval.top) = (yyvsp[(1) - (1)].top);
       }
@@ -1630,7 +1638,7 @@ yyreduce:
 
   case 7:
 /* Line 1792 of yacc.c  */
-#line 129 "src/parser.y"
+#line 137 "src/parser.y"
     {
           if (!declare_function((yyvsp[(2) - (2)].sval))) {
               semantic_error("function redeclared");
@@ -1641,7 +1649,7 @@ yyreduce:
 
   case 8:
 /* Line 1792 of yacc.c  */
-#line 136 "src/parser.y"
+#line 144 "src/parser.y"
     {
           ASTIdentifierList *params = (yyvsp[(5) - (7)].idlist);
           set_current_function_body((yyvsp[(7) - (7)].stmt));
@@ -1652,7 +1660,7 @@ yyreduce:
 
   case 9:
 /* Line 1792 of yacc.c  */
-#line 146 "src/parser.y"
+#line 154 "src/parser.y"
     {
           (yyval.stmt) = make_block_stmt((yyvsp[(2) - (3)].stmt));
       }
@@ -1660,7 +1668,7 @@ yyreduce:
 
   case 10:
 /* Line 1792 of yacc.c  */
-#line 153 "src/parser.y"
+#line 161 "src/parser.y"
     {
           (yyval.idlist) = NULL;
       }
@@ -1668,7 +1676,7 @@ yyreduce:
 
   case 11:
 /* Line 1792 of yacc.c  */
-#line 157 "src/parser.y"
+#line 165 "src/parser.y"
     {
           (yyval.idlist) = (yyvsp[(1) - (1)].idlist);
       }
@@ -1676,7 +1684,7 @@ yyreduce:
 
   case 12:
 /* Line 1792 of yacc.c  */
-#line 164 "src/parser.y"
+#line 172 "src/parser.y"
     {
           if (!add_parameter_to_current_function((yyvsp[(1) - (1)].sval), TYPE_FLOAT)) {
               semantic_error("parameter redeclared");
@@ -1687,7 +1695,7 @@ yyreduce:
 
   case 13:
 /* Line 1792 of yacc.c  */
-#line 171 "src/parser.y"
+#line 179 "src/parser.y"
     {
           if (!add_parameter_to_current_function((yyvsp[(3) - (3)].sval), TYPE_FLOAT)) {
               semantic_error("parameter redeclared");
@@ -1698,7 +1706,7 @@ yyreduce:
 
   case 14:
 /* Line 1792 of yacc.c  */
-#line 181 "src/parser.y"
+#line 189 "src/parser.y"
     {
           (yyval.stmt) = make_block_stmt((yyvsp[(2) - (3)].stmt));
       }
@@ -1706,7 +1714,7 @@ yyreduce:
 
   case 15:
 /* Line 1792 of yacc.c  */
-#line 188 "src/parser.y"
+#line 196 "src/parser.y"
     {
           (yyval.stmt) = NULL;
       }
@@ -1714,7 +1722,7 @@ yyreduce:
 
   case 16:
 /* Line 1792 of yacc.c  */
-#line 192 "src/parser.y"
+#line 200 "src/parser.y"
     {
           (yyval.stmt) = append_stmt((yyvsp[(1) - (2)].stmt), (yyvsp[(2) - (2)].stmt));
       }
@@ -1722,7 +1730,7 @@ yyreduce:
 
   case 17:
 /* Line 1792 of yacc.c  */
-#line 199 "src/parser.y"
+#line 207 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(1) - (2)].stmt);
       }
@@ -1730,7 +1738,7 @@ yyreduce:
 
   case 18:
 /* Line 1792 of yacc.c  */
-#line 203 "src/parser.y"
+#line 211 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(1) - (2)].stmt);
       }
@@ -1738,7 +1746,7 @@ yyreduce:
 
   case 19:
 /* Line 1792 of yacc.c  */
-#line 207 "src/parser.y"
+#line 215 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(1) - (2)].stmt);
       }
@@ -1746,7 +1754,7 @@ yyreduce:
 
   case 20:
 /* Line 1792 of yacc.c  */
-#line 211 "src/parser.y"
+#line 219 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(1) - (2)].stmt);
       }
@@ -1754,7 +1762,7 @@ yyreduce:
 
   case 21:
 /* Line 1792 of yacc.c  */
-#line 215 "src/parser.y"
+#line 223 "src/parser.y"
     {
           (yyval.stmt) = make_expr_stmt((yyvsp[(1) - (2)].expr).node);
       }
@@ -1762,7 +1770,7 @@ yyreduce:
 
   case 22:
 /* Line 1792 of yacc.c  */
-#line 219 "src/parser.y"
+#line 227 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(1) - (2)].stmt);
       }
@@ -1770,7 +1778,7 @@ yyreduce:
 
   case 23:
 /* Line 1792 of yacc.c  */
-#line 223 "src/parser.y"
+#line 231 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(1) - (1)].stmt);
       }
@@ -1778,7 +1786,7 @@ yyreduce:
 
   case 24:
 /* Line 1792 of yacc.c  */
-#line 227 "src/parser.y"
+#line 235 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(1) - (1)].stmt);
       }
@@ -1786,7 +1794,7 @@ yyreduce:
 
   case 25:
 /* Line 1792 of yacc.c  */
-#line 231 "src/parser.y"
+#line 239 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(1) - (1)].stmt);
       }
@@ -1794,7 +1802,7 @@ yyreduce:
 
   case 26:
 /* Line 1792 of yacc.c  */
-#line 238 "src/parser.y"
+#line 246 "src/parser.y"
     {
           current_decl_type = TYPE_INT;
       }
@@ -1802,7 +1810,7 @@ yyreduce:
 
   case 27:
 /* Line 1792 of yacc.c  */
-#line 242 "src/parser.y"
+#line 250 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(3) - (3)].stmt);
       }
@@ -1810,7 +1818,7 @@ yyreduce:
 
   case 28:
 /* Line 1792 of yacc.c  */
-#line 246 "src/parser.y"
+#line 254 "src/parser.y"
     {
           current_decl_type = TYPE_FLOAT;
       }
@@ -1818,7 +1826,7 @@ yyreduce:
 
   case 29:
 /* Line 1792 of yacc.c  */
-#line 250 "src/parser.y"
+#line 258 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(3) - (3)].stmt);
       }
@@ -1826,7 +1834,7 @@ yyreduce:
 
   case 30:
 /* Line 1792 of yacc.c  */
-#line 254 "src/parser.y"
+#line 262 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(2) - (2)].stmt);
       }
@@ -1834,7 +1842,7 @@ yyreduce:
 
   case 31:
 /* Line 1792 of yacc.c  */
-#line 258 "src/parser.y"
+#line 266 "src/parser.y"
     {
           (yyval.stmt) = (yyvsp[(2) - (2)].stmt);
       }
@@ -1842,7 +1850,7 @@ yyreduce:
 
   case 32:
 /* Line 1792 of yacc.c  */
-#line 265 "src/parser.y"
+#line 273 "src/parser.y"
     {
           if (!declare_variable((yyvsp[(1) - (1)].sval), current_decl_type, SYM_VAR)) {
               semantic_error("variable redeclared in same scope");
@@ -1853,7 +1861,7 @@ yyreduce:
 
   case 33:
 /* Line 1792 of yacc.c  */
-#line 272 "src/parser.y"
+#line 280 "src/parser.y"
     {
           if (!declare_variable((yyvsp[(1) - (3)].sval), current_decl_type, SYM_VAR)) {
               semantic_error("variable redeclared in same scope");
@@ -1866,7 +1874,7 @@ yyreduce:
 
   case 34:
 /* Line 1792 of yacc.c  */
-#line 284 "src/parser.y"
+#line 292 "src/parser.y"
     {
           if (!declare_variable((yyvsp[(1) - (1)].sval), TYPE_STRING, SYM_VAR)) {
               semantic_error("variable redeclared in same scope");
@@ -1877,7 +1885,7 @@ yyreduce:
 
   case 35:
 /* Line 1792 of yacc.c  */
-#line 291 "src/parser.y"
+#line 299 "src/parser.y"
     {
           if (!declare_variable((yyvsp[(1) - (3)].sval), TYPE_STRING, SYM_VAR)) {
               semantic_error("variable redeclared in same scope");
@@ -1888,7 +1896,7 @@ yyreduce:
 
   case 36:
 /* Line 1792 of yacc.c  */
-#line 301 "src/parser.y"
+#line 309 "src/parser.y"
     {
           if (!declare_variable((yyvsp[(1) - (1)].sval), TYPE_CHAR, SYM_VAR)) {
               semantic_error("variable redeclared in same scope");
@@ -1899,7 +1907,7 @@ yyreduce:
 
   case 37:
 /* Line 1792 of yacc.c  */
-#line 308 "src/parser.y"
+#line 316 "src/parser.y"
     {
           if (!declare_variable((yyvsp[(1) - (3)].sval), TYPE_CHAR, SYM_VAR)) {
               semantic_error("variable redeclared in same scope");
@@ -1910,7 +1918,7 @@ yyreduce:
 
   case 38:
 /* Line 1792 of yacc.c  */
-#line 318 "src/parser.y"
+#line 326 "src/parser.y"
     {
           Symbol *s = lookup_symbol((yyvsp[(1) - (3)].sval));
           if (s == NULL) {
@@ -1926,7 +1934,7 @@ yyreduce:
 
   case 39:
 /* Line 1792 of yacc.c  */
-#line 330 "src/parser.y"
+#line 338 "src/parser.y"
     {
           Symbol *s = lookup_symbol((yyvsp[(1) - (3)].sval));
           if (s == NULL) {
@@ -1942,7 +1950,7 @@ yyreduce:
 
   case 40:
 /* Line 1792 of yacc.c  */
-#line 342 "src/parser.y"
+#line 350 "src/parser.y"
     {
           Symbol *s = lookup_symbol((yyvsp[(1) - (3)].sval));
           if (s == NULL) {
@@ -1958,7 +1966,7 @@ yyreduce:
 
   case 41:
 /* Line 1792 of yacc.c  */
-#line 357 "src/parser.y"
+#line 365 "src/parser.y"
     {
           (yyval.stmt) = make_print_expr_stmt((yyvsp[(2) - (2)].expr).node);
       }
@@ -1966,7 +1974,7 @@ yyreduce:
 
   case 42:
 /* Line 1792 of yacc.c  */
-#line 361 "src/parser.y"
+#line 369 "src/parser.y"
     {
           (yyval.stmt) = make_print_string_stmt((yyvsp[(2) - (2)].sval));
       }
@@ -1974,7 +1982,7 @@ yyreduce:
 
   case 43:
 /* Line 1792 of yacc.c  */
-#line 365 "src/parser.y"
+#line 373 "src/parser.y"
     {
           (yyval.stmt) = make_print_char_stmt((yyvsp[(2) - (2)].cval));
       }
@@ -1982,7 +1990,7 @@ yyreduce:
 
   case 44:
 /* Line 1792 of yacc.c  */
-#line 372 "src/parser.y"
+#line 380 "src/parser.y"
     {
           if (lookup_symbol((yyvsp[(2) - (2)].sval)) == NULL) {
               semantic_error("input target is undeclared");
@@ -1993,7 +2001,7 @@ yyreduce:
 
   case 45:
 /* Line 1792 of yacc.c  */
-#line 382 "src/parser.y"
+#line 390 "src/parser.y"
     {
           if (!in_function_context()) {
               semantic_error("pherot used outside function");
@@ -2006,7 +2014,7 @@ yyreduce:
 
   case 46:
 /* Line 1792 of yacc.c  */
-#line 391 "src/parser.y"
+#line 399 "src/parser.y"
     {
           if (!in_function_context()) {
               semantic_error("pherot used outside function");
@@ -2019,7 +2027,7 @@ yyreduce:
 
   case 47:
 /* Line 1792 of yacc.c  */
-#line 400 "src/parser.y"
+#line 408 "src/parser.y"
     {
           if (!in_function_context()) {
               semantic_error("pherot used outside function");
@@ -2032,7 +2040,7 @@ yyreduce:
 
   case 48:
 /* Line 1792 of yacc.c  */
-#line 412 "src/parser.y"
+#line 420 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(3) - (5)].expr).type)) {
               semantic_error("if condition must be numeric/boolean-like");
@@ -2043,7 +2051,7 @@ yyreduce:
 
   case 49:
 /* Line 1792 of yacc.c  */
-#line 419 "src/parser.y"
+#line 427 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(3) - (7)].expr).type)) {
               semantic_error("if condition must be numeric/boolean-like");
@@ -2054,7 +2062,7 @@ yyreduce:
 
   case 50:
 /* Line 1792 of yacc.c  */
-#line 429 "src/parser.y"
+#line 437 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(5) - (9)].expr).type)) {
               semantic_error("loop condition must be numeric/boolean-like");
@@ -2065,7 +2073,7 @@ yyreduce:
 
   case 51:
 /* Line 1792 of yacc.c  */
-#line 439 "src/parser.y"
+#line 447 "src/parser.y"
     {
           Symbol *f = lookup_function((yyvsp[(1) - (4)].sval));
           if (f == NULL) {
@@ -2091,7 +2099,7 @@ yyreduce:
 
   case 52:
 /* Line 1792 of yacc.c  */
-#line 464 "src/parser.y"
+#line 472 "src/parser.y"
     {
           (yyval.args).count = 0;
           (yyval.args).nodes = NULL;
@@ -2100,7 +2108,7 @@ yyreduce:
 
   case 53:
 /* Line 1792 of yacc.c  */
-#line 469 "src/parser.y"
+#line 477 "src/parser.y"
     {
           (yyval.args) = (yyvsp[(1) - (1)].args);
       }
@@ -2108,7 +2116,7 @@ yyreduce:
 
   case 54:
 /* Line 1792 of yacc.c  */
-#line 476 "src/parser.y"
+#line 484 "src/parser.y"
     {
           (yyval.args) = (yyvsp[(1) - (1)].args);
       }
@@ -2116,7 +2124,7 @@ yyreduce:
 
   case 55:
 /* Line 1792 of yacc.c  */
-#line 480 "src/parser.y"
+#line 488 "src/parser.y"
     {
           int i;
           (yyval.args) = (yyvsp[(1) - (3)].args);
@@ -2139,7 +2147,7 @@ yyreduce:
 
   case 56:
 /* Line 1792 of yacc.c  */
-#line 502 "src/parser.y"
+#line 510 "src/parser.y"
     {
           (yyval.args).count = 1;
           (yyval.args).types[0] = (yyvsp[(1) - (1)].expr).type;
@@ -2149,7 +2157,7 @@ yyreduce:
 
   case 57:
 /* Line 1792 of yacc.c  */
-#line 508 "src/parser.y"
+#line 516 "src/parser.y"
     {
           (yyval.args).count = 1;
           (yyval.args).types[0] = TYPE_STRING;
@@ -2159,7 +2167,7 @@ yyreduce:
 
   case 58:
 /* Line 1792 of yacc.c  */
-#line 514 "src/parser.y"
+#line 522 "src/parser.y"
     {
           (yyval.args).count = 1;
           (yyval.args).types[0] = TYPE_CHAR;
@@ -2169,7 +2177,7 @@ yyreduce:
 
   case 59:
 /* Line 1792 of yacc.c  */
-#line 523 "src/parser.y"
+#line 531 "src/parser.y"
     {
           DataType t = arithmetic_result_type((yyvsp[(1) - (3)].expr).type, (yyvsp[(3) - (3)].expr).type);
           if (t == TYPE_UNKNOWN) semantic_error("invalid operands for +");
@@ -2180,7 +2188,7 @@ yyreduce:
 
   case 60:
 /* Line 1792 of yacc.c  */
-#line 530 "src/parser.y"
+#line 538 "src/parser.y"
     {
           DataType t = arithmetic_result_type((yyvsp[(1) - (3)].expr).type, (yyvsp[(3) - (3)].expr).type);
           if (t == TYPE_UNKNOWN) semantic_error("invalid operands for -");
@@ -2191,7 +2199,7 @@ yyreduce:
 
   case 61:
 /* Line 1792 of yacc.c  */
-#line 537 "src/parser.y"
+#line 545 "src/parser.y"
     {
           DataType t = arithmetic_result_type((yyvsp[(1) - (3)].expr).type, (yyvsp[(3) - (3)].expr).type);
           if (t == TYPE_UNKNOWN) semantic_error("invalid operands for *");
@@ -2202,7 +2210,7 @@ yyreduce:
 
   case 62:
 /* Line 1792 of yacc.c  */
-#line 544 "src/parser.y"
+#line 552 "src/parser.y"
     {
           DataType t = arithmetic_result_type((yyvsp[(1) - (3)].expr).type, (yyvsp[(3) - (3)].expr).type);
           if (t == TYPE_UNKNOWN) semantic_error("invalid operands for /");
@@ -2213,7 +2221,7 @@ yyreduce:
 
   case 63:
 /* Line 1792 of yacc.c  */
-#line 551 "src/parser.y"
+#line 559 "src/parser.y"
     {
           if ((yyvsp[(1) - (3)].expr).type != TYPE_INT || (yyvsp[(3) - (3)].expr).type != TYPE_INT) {
               semantic_error("modulo requires integer operands");
@@ -2227,7 +2235,7 @@ yyreduce:
 
   case 64:
 /* Line 1792 of yacc.c  */
-#line 561 "src/parser.y"
+#line 569 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(1) - (3)].expr).type) || !is_numeric_type((yyvsp[(3) - (3)].expr).type)) {
               semantic_error("comparison requires numeric operands");
@@ -2239,7 +2247,7 @@ yyreduce:
 
   case 65:
 /* Line 1792 of yacc.c  */
-#line 569 "src/parser.y"
+#line 577 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(1) - (3)].expr).type) || !is_numeric_type((yyvsp[(3) - (3)].expr).type)) {
               semantic_error("comparison requires numeric operands");
@@ -2251,7 +2259,7 @@ yyreduce:
 
   case 66:
 /* Line 1792 of yacc.c  */
-#line 577 "src/parser.y"
+#line 585 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(1) - (3)].expr).type) || !is_numeric_type((yyvsp[(3) - (3)].expr).type)) {
               semantic_error("comparison requires numeric operands");
@@ -2263,7 +2271,7 @@ yyreduce:
 
   case 67:
 /* Line 1792 of yacc.c  */
-#line 585 "src/parser.y"
+#line 593 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(1) - (3)].expr).type) || !is_numeric_type((yyvsp[(3) - (3)].expr).type)) {
               semantic_error("comparison requires numeric operands");
@@ -2275,7 +2283,7 @@ yyreduce:
 
   case 68:
 /* Line 1792 of yacc.c  */
-#line 593 "src/parser.y"
+#line 601 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(1) - (3)].expr).type) || !is_numeric_type((yyvsp[(3) - (3)].expr).type)) {
               semantic_error("comparison requires numeric operands");
@@ -2287,7 +2295,7 @@ yyreduce:
 
   case 69:
 /* Line 1792 of yacc.c  */
-#line 601 "src/parser.y"
+#line 609 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(1) - (3)].expr).type) || !is_numeric_type((yyvsp[(3) - (3)].expr).type)) {
               semantic_error("comparison requires numeric operands");
@@ -2299,7 +2307,7 @@ yyreduce:
 
   case 70:
 /* Line 1792 of yacc.c  */
-#line 609 "src/parser.y"
+#line 617 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(2) - (2)].expr).type)) {
               semantic_error("unary minus requires numeric operand");
@@ -2313,7 +2321,7 @@ yyreduce:
 
   case 71:
 /* Line 1792 of yacc.c  */
-#line 619 "src/parser.y"
+#line 627 "src/parser.y"
     {
           (yyval.expr).type = (yyvsp[(2) - (3)].expr).type;
           (yyval.expr).node = (yyvsp[(2) - (3)].expr).node;
@@ -2322,7 +2330,7 @@ yyreduce:
 
   case 72:
 /* Line 1792 of yacc.c  */
-#line 624 "src/parser.y"
+#line 632 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(3) - (6)].expr).type) || !is_numeric_type((yyvsp[(5) - (6)].expr).type)) {
               semantic_error("shakti requires numeric arguments");
@@ -2336,7 +2344,7 @@ yyreduce:
 
   case 73:
 /* Line 1792 of yacc.c  */
-#line 634 "src/parser.y"
+#line 642 "src/parser.y"
     {
           if (!is_numeric_type((yyvsp[(3) - (4)].expr).type)) {
               semantic_error("borgomul requires numeric argument");
@@ -2350,7 +2358,7 @@ yyreduce:
 
   case 74:
 /* Line 1792 of yacc.c  */
-#line 644 "src/parser.y"
+#line 652 "src/parser.y"
     {
           (yyval.expr).type = (yyvsp[(1) - (1)].expr).type;
           (yyval.expr).node = (yyvsp[(1) - (1)].expr).node;
@@ -2359,7 +2367,7 @@ yyreduce:
 
   case 75:
 /* Line 1792 of yacc.c  */
-#line 649 "src/parser.y"
+#line 657 "src/parser.y"
     {
           (yyval.expr).type = TYPE_INT;
           (yyval.expr).node = make_int_expr((yyvsp[(1) - (1)].ival));
@@ -2368,7 +2376,7 @@ yyreduce:
 
   case 76:
 /* Line 1792 of yacc.c  */
-#line 654 "src/parser.y"
+#line 662 "src/parser.y"
     {
           (yyval.expr).type = TYPE_FLOAT;
           (yyval.expr).node = make_float_expr((yyvsp[(1) - (1)].fval));
@@ -2377,7 +2385,7 @@ yyreduce:
 
   case 77:
 /* Line 1792 of yacc.c  */
-#line 659 "src/parser.y"
+#line 667 "src/parser.y"
     {
           Symbol *s = lookup_symbol((yyvsp[(1) - (1)].sval));
           if (s == NULL) {
@@ -2392,7 +2400,7 @@ yyreduce:
 
 
 /* Line 1792 of yacc.c  */
-#line 2396 "parser.tab.c"
+#line 2404 "parser.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2624,7 +2632,7 @@ yyreturn:
 
 
 /* Line 2055 of yacc.c  */
-#line 671 "src/parser.y"
+#line 679 "src/parser.y"
 
 
 void yyerror(const char *s) {
