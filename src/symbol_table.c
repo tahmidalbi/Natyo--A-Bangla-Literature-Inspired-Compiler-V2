@@ -11,17 +11,31 @@ static Symbol *current_function = NULL;
 static void clear_runtime_value(RuntimeValue *v) {
     if (v->type == TYPE_STRING && v->str_val != NULL) {
         free(v->str_val);
+        v->str_val = NULL;
     }
     v->type = TYPE_UNKNOWN;
     v->num_val = 0.0;
-    v->str_val = NULL;
     v->char_val = '\0';
+}
+
+static void clear_symbol_runtime(Symbol *s) {
+    int i;
+
+    clear_runtime_value(&s->value);
+
+    if (s->array_values != NULL) {
+        for (i = 0; i < s->array_size; i++) {
+            clear_runtime_value(&s->array_values[i]);
+        }
+        free(s->array_values);
+        s->array_values = NULL;
+    }
 }
 
 void init_symbol_table(void) {
     int i;
     for (i = 0; i < symbol_count; i++) {
-        clear_runtime_value(&symbols[i].value);
+        clear_symbol_runtime(&symbols[i]);
     }
     symbol_count = 0;
     current_scope = 0;
@@ -55,7 +69,7 @@ void exit_scope(void) {
         if (symbols[i].scope_level == current_scope &&
             symbols[i].kind != SYM_FUNC &&
             symbols[i].kind != SYM_CONST) {
-            clear_runtime_value(&symbols[i].value);
+            clear_symbol_runtime(&symbols[i]);
             continue;
         }
         symbols[j++] = symbols[i];
@@ -116,7 +130,49 @@ int declare_variable(const char *name, DataType type, SymbolKind kind) {
     symbols[symbol_count].kind = kind;
     symbols[symbol_count].scope_level = current_scope;
 
+    symbols[symbol_count].is_array = 0;
+    symbols[symbol_count].array_size = 0;
+    symbols[symbol_count].array_values = NULL;
+
     symbols[symbol_count].value.type = type;
+    symbols[symbol_count].value.num_val = 0.0;
+    symbols[symbol_count].value.str_val = NULL;
+    symbols[symbol_count].value.char_val = '\0';
+
+    symbols[symbol_count].param_count = 0;
+    symbols[symbol_count].return_type = TYPE_UNKNOWN;
+    symbols[symbol_count].function_body = NULL;
+
+    symbol_count++;
+    return 1;
+}
+
+int declare_array(const char *name, DataType type, SymbolKind kind, int array_size) {
+    int i;
+    Symbol *existing = lookup_symbol_current_scope(name);
+
+    if (existing != NULL) return 0;
+    if (symbol_count >= MAX_SYMBOLS) return 0;
+    if (array_size <= 0) return 0;
+
+    strncpy(symbols[symbol_count].name, name, NAME_SIZE - 1);
+    symbols[symbol_count].name[NAME_SIZE - 1] = '\0';
+    symbols[symbol_count].type = type;
+    symbols[symbol_count].kind = kind;
+    symbols[symbol_count].scope_level = current_scope;
+
+    symbols[symbol_count].is_array = 1;
+    symbols[symbol_count].array_size = array_size;
+    symbols[symbol_count].array_values = (RuntimeValue *)malloc(sizeof(RuntimeValue) * array_size);
+
+    for (i = 0; i < array_size; i++) {
+        symbols[symbol_count].array_values[i].type = type;
+        symbols[symbol_count].array_values[i].num_val = 0.0;
+        symbols[symbol_count].array_values[i].str_val = NULL;
+        symbols[symbol_count].array_values[i].char_val = '\0';
+    }
+
+    symbols[symbol_count].value.type = TYPE_UNKNOWN;
     symbols[symbol_count].value.num_val = 0.0;
     symbols[symbol_count].value.str_val = NULL;
     symbols[symbol_count].value.char_val = '\0';
@@ -140,6 +196,10 @@ int declare_function(const char *name) {
     symbols[symbol_count].type = TYPE_UNKNOWN;
     symbols[symbol_count].kind = SYM_FUNC;
     symbols[symbol_count].scope_level = 0;
+
+    symbols[symbol_count].is_array = 0;
+    symbols[symbol_count].array_size = 0;
+    symbols[symbol_count].array_values = NULL;
 
     symbols[symbol_count].value.type = TYPE_UNKNOWN;
     symbols[symbol_count].value.num_val = 0.0;
@@ -208,21 +268,25 @@ void set_current_function_body(ASTStmt *body) {
 }
 
 void set_symbol_numeric(Symbol *s, double value) {
-    if (s == NULL) return;
+    if (s == NULL || s->is_array) return;
+
     if (s->value.type == TYPE_STRING && s->value.str_val != NULL) {
         free(s->value.str_val);
         s->value.str_val = NULL;
     }
+
     s->value.type = s->type;
     s->value.num_val = value;
     s->value.char_val = '\0';
 }
 
 void set_symbol_string(Symbol *s, const char *value) {
-    if (s == NULL) return;
+    if (s == NULL || s->is_array) return;
+
     if (s->value.type == TYPE_STRING && s->value.str_val != NULL) {
         free(s->value.str_val);
     }
+
     s->value.type = TYPE_STRING;
     s->value.str_val = strdup(value);
     s->value.num_val = 0.0;
@@ -230,14 +294,55 @@ void set_symbol_string(Symbol *s, const char *value) {
 }
 
 void set_symbol_char(Symbol *s, char value) {
-    if (s == NULL) return;
+    if (s == NULL || s->is_array) return;
+
     if (s->value.type == TYPE_STRING && s->value.str_val != NULL) {
         free(s->value.str_val);
         s->value.str_val = NULL;
     }
+
     s->value.type = TYPE_CHAR;
     s->value.char_val = value;
     s->value.num_val = 0.0;
+}
+
+void set_array_element_numeric(Symbol *s, int index, double value) {
+    if (s == NULL || !s->is_array || index < 0 || index >= s->array_size) return;
+
+    if (s->array_values[index].type == TYPE_STRING && s->array_values[index].str_val != NULL) {
+        free(s->array_values[index].str_val);
+        s->array_values[index].str_val = NULL;
+    }
+
+    s->array_values[index].type = s->type;
+    s->array_values[index].num_val = value;
+    s->array_values[index].char_val = '\0';
+}
+
+void set_array_element_string(Symbol *s, int index, const char *value) {
+    if (s == NULL || !s->is_array || index < 0 || index >= s->array_size) return;
+
+    if (s->array_values[index].type == TYPE_STRING && s->array_values[index].str_val != NULL) {
+        free(s->array_values[index].str_val);
+    }
+
+    s->array_values[index].type = TYPE_STRING;
+    s->array_values[index].str_val = strdup(value);
+    s->array_values[index].num_val = 0.0;
+    s->array_values[index].char_val = '\0';
+}
+
+void set_array_element_char(Symbol *s, int index, char value) {
+    if (s == NULL || !s->is_array || index < 0 || index >= s->array_size) return;
+
+    if (s->array_values[index].type == TYPE_STRING && s->array_values[index].str_val != NULL) {
+        free(s->array_values[index].str_val);
+        s->array_values[index].str_val = NULL;
+    }
+
+    s->array_values[index].type = TYPE_CHAR;
+    s->array_values[index].char_val = value;
+    s->array_values[index].num_val = 0.0;
 }
 
 const char* type_name(DataType t) {

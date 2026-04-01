@@ -8,36 +8,108 @@ a = 5
 b = 3.500000
 msg = "Hello"
 c = 'A'
+declare arr[5]
+declare farr[3]
+declare texts[2]
+declare chars[2]
 a = 10
 t2 = a + b
 b = t2
+arr[0] = 10
+arr[1] = 20
+t3 = arr[0]
+t4 = arr[1]
+t5 = t3 + t4
+arr[2] = t5
+arr[3] = 8
+arr[4] = 4
+farr[0] = 3.500000
+farr[1] = 9.000000
+farr[2] = 5.000000
+texts[0] = "Natyo"
+texts[1] = "Compiler"
+chars[0] = 'X'
+chars[1] = 'Y'
 print a
 print b
 print msg
 print c
-t3 = a < 20
-if t3 goto L1
+print PAI
+print E
+print G
+print 9.000000
+print 4.000000
+t6 = call jog(4, 6)
+print t6
+t7 = a > 20
+if t7 goto L1
 goto L2
 L1:
 print 1
 goto L3
 L2:
-print 0
+print -2
 L3:
-a = 0
+a = 9
+t8 = a > 10
+if t8 goto L4
+goto L5
 L4:
-t4 = a < 3
-ifFalse t4 goto L5
-print a
-t5 = a + 1
-a = t5
-goto L4
+print 1
+goto L6
 L5:
-t6 = call jog(4, 6)
-print t6
-print 9.000000
-print 4.000000
-print PAI
+t9 = a > 5
+if t9 goto L7
+goto L8
+L7:
+print 2
+goto L9
+L8:
+print 3
+L9:
+L6:
+a = 0
+L10:
+t10 = a < 3
+ifFalse t10 goto L11
+print a
+t11 = a + 1
+a = t11
+goto L10
+L11:
+i = 0
+i = 0
+L12:
+t12 = i < 5
+ifFalse t12 goto L13
+t13 = arr[i]
+print t13
+t14 = i + 1
+i = t14
+goto L12
+L13:
+i = 0
+L14:
+t15 = i < 3
+ifFalse t15 goto L15
+t16 = farr[i]
+print t16
+t17 = i + 1
+i = t17
+goto L14
+L15:
+t18 = texts[0]
+print t18
+t19 = texts[1]
+print t19
+t20 = chars[0]
+print t20
+t21 = chars[1]
+print t21
 declare q
 input q
 print q
+input arr[2]
+t22 = arr[2]
+print t22
+print 1

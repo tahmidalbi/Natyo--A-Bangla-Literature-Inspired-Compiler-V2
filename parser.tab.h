@@ -105,8 +105,10 @@ extern int yydebug;
      COMMA = 293,
      LPAREN = 294,
      RPAREN = 295,
-     LOWER_THAN_ELSE = 296,
-     UMINUS = 297
+     LBRACKET = 296,
+     RBRACKET = 297,
+     LOWER_THAN_ELSE = 298,
+     UMINUS = 299
    };
 #endif
 
@@ -129,7 +131,7 @@ typedef union YYSTYPE
 
 
 /* Line 2058 of yacc.c  */
-#line 133 "parser.tab.h"
+#line 135 "parser.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

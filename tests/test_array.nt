@@ -1,0 +1,29 @@
+prostabona
+
+shonkhya a[5];
+purnoshonkhya b[3];
+bakkyo msg[2];
+okkhyor c[2];
+
+a[0] = 10;
+a[1] = 20;
+a[2] = a[0] + a[1];
+
+b[0] = 3.5;
+b[1] = shakti(2, 3);
+
+msg[0] = "Hello";
+c[0] = 'Z';
+
+shobdo a[0];
+shobdo a[1];
+shobdo a[2];
+shobdo b[0];
+shobdo b[1];
+shobdo msg[0];
+shobdo c[0];
+
+jobdo a[3];
+shobdo a[3];
+
+uposhonghar

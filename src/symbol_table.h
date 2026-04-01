@@ -36,7 +36,11 @@ typedef struct {
     SymbolKind kind;
     int scope_level;
 
+    int is_array;
+    int array_size;
+
     RuntimeValue value;
+    RuntimeValue *array_values;
 
     int param_count;
     DataType param_types[MAX_PARAMS];
@@ -57,6 +61,7 @@ Symbol* lookup_symbol_current_scope(const char *name);
 Symbol* lookup_function(const char *name);
 
 int declare_variable(const char *name, DataType type, SymbolKind kind);
+int declare_array(const char *name, DataType type, SymbolKind kind, int array_size);
 int declare_function(const char *name);
 int add_parameter_to_current_function(const char *name, DataType type);
 
@@ -71,6 +76,10 @@ void set_current_function_body(ASTStmt *body);
 void set_symbol_numeric(Symbol *s, double value);
 void set_symbol_string(Symbol *s, const char *value);
 void set_symbol_char(Symbol *s, char value);
+
+void set_array_element_numeric(Symbol *s, int index, double value);
+void set_array_element_string(Symbol *s, int index, const char *value);
+void set_array_element_char(Symbol *s, int index, char value);
 
 const char* type_name(DataType t);
 int is_numeric_type(DataType t);

@@ -43,7 +43,6 @@ static const char* op_to_str(OperatorKind op) {
 }
 
 static char* gen_expr(FILE *out, ASTExpr *expr);
-
 static void gen_stmt(FILE *out, ASTStmt *stmt);
 
 static void gen_stmt_list(FILE *out, ASTStmt *stmt) {
@@ -78,9 +77,9 @@ static char* literal_to_string_string(const char *value) {
 }
 
 static char* gen_expr(FILE *out, ASTExpr *expr) {
-    char *left, *right, *temp, *arg_text;
+    char *left, *right, *temp;
     ASTArgList *arg;
-    size_t total_len;
+    char *arg_text;
 
     if (expr == NULL) return str_dup_local("0");
 
@@ -99,6 +98,13 @@ static char* gen_expr(FILE *out, ASTExpr *expr) {
 
         case EXPR_IDENTIFIER:
             return str_dup_local(expr->data.sval);
+
+        case EXPR_ARRAY_ACCESS:
+            left = gen_expr(out, expr->data.array_access.index_expr);
+            temp = new_temp();
+            fprintf(out, "%s = %s[%s]\n", temp, expr->data.array_access.name, left);
+            free(left);
+            return temp;
 
         case EXPR_UNARY:
             left = gen_expr(out, expr->data.unary.operand);
@@ -133,20 +139,19 @@ static char* gen_expr(FILE *out, ASTExpr *expr) {
             return temp;
 
         case EXPR_CALL:
-            total_len = strlen(expr->data.call.name) + 16;
             arg = expr->data.call.args;
             arg_text = str_dup_local("");
 
             while (arg != NULL) {
                 char *arg_val = gen_expr(out, arg->expr);
-                char *new_text;
-                total_len += strlen(arg_val) + 2;
-                new_text = (char *)malloc(strlen(arg_text) + strlen(arg_val) + 3);
+                char *new_text = (char *)malloc(strlen(arg_text) + strlen(arg_val) + 3);
+
                 if (strlen(arg_text) == 0) {
                     sprintf(new_text, "%s", arg_val);
                 } else {
                     sprintf(new_text, "%s, %s", arg_text, arg_val);
                 }
+
                 free(arg_text);
                 free(arg_val);
                 arg_text = new_text;
@@ -163,12 +168,17 @@ static char* gen_expr(FILE *out, ASTExpr *expr) {
 }
 
 static void gen_stmt(FILE *out, ASTStmt *stmt) {
-    char *v, *ltrue, *lfalse, *lend, *lstart;
+    char *v, *ltrue, *lfalse, *lend, *lstart, *idx;
+
     if (stmt == NULL) return;
 
     switch (stmt->kind) {
         case STMT_DECL:
-            if (stmt->data.decl.has_init) {
+            if (stmt->data.decl.is_array) {
+                fprintf(out, "declare %s[%d]\n",
+                        stmt->data.decl.name,
+                        stmt->data.decl.array_size);
+            } else if (stmt->data.decl.has_init) {
                 if (stmt->data.decl.decl_type == TYPE_STRING) {
                     fprintf(out, "%s = \"%s\"\n",
                             stmt->data.decl.name,
@@ -188,18 +198,43 @@ static void gen_stmt(FILE *out, ASTStmt *stmt) {
             break;
 
         case STMT_ASSIGN:
-            if (stmt->data.assign.assign_kind == TYPE_STRING) {
-                fprintf(out, "%s = \"%s\"\n",
-                        stmt->data.assign.name,
-                        stmt->data.assign.string_value);
-            } else if (stmt->data.assign.assign_kind == TYPE_CHAR) {
-                fprintf(out, "%s = '%c'\n",
-                        stmt->data.assign.name,
-                        stmt->data.assign.char_value);
+            if (stmt->data.assign.target_is_array) {
+                idx = gen_expr(out, stmt->data.assign.index_expr);
+
+                if (stmt->data.assign.assign_kind == TYPE_STRING) {
+                    fprintf(out, "%s[%s] = \"%s\"\n",
+                            stmt->data.assign.name,
+                            idx,
+                            stmt->data.assign.string_value);
+                } else if (stmt->data.assign.assign_kind == TYPE_CHAR) {
+                    fprintf(out, "%s[%s] = '%c'\n",
+                            stmt->data.assign.name,
+                            idx,
+                            stmt->data.assign.char_value);
+                } else {
+                    v = gen_expr(out, stmt->data.assign.value_expr);
+                    fprintf(out, "%s[%s] = %s\n",
+                            stmt->data.assign.name,
+                            idx,
+                            v);
+                    free(v);
+                }
+
+                free(idx);
             } else {
-                v = gen_expr(out, stmt->data.assign.value_expr);
-                fprintf(out, "%s = %s\n", stmt->data.assign.name, v);
-                free(v);
+                if (stmt->data.assign.assign_kind == TYPE_STRING) {
+                    fprintf(out, "%s = \"%s\"\n",
+                            stmt->data.assign.name,
+                            stmt->data.assign.string_value);
+                } else if (stmt->data.assign.assign_kind == TYPE_CHAR) {
+                    fprintf(out, "%s = '%c'\n",
+                            stmt->data.assign.name,
+                            stmt->data.assign.char_value);
+                } else {
+                    v = gen_expr(out, stmt->data.assign.value_expr);
+                    fprintf(out, "%s = %s\n", stmt->data.assign.name, v);
+                    free(v);
+                }
             }
             break;
 
@@ -216,7 +251,13 @@ static void gen_stmt(FILE *out, ASTStmt *stmt) {
             break;
 
         case STMT_INPUT:
-            fprintf(out, "input %s\n", stmt->data.input_stmt.name);
+            if (stmt->data.input_stmt.target_is_array) {
+                idx = gen_expr(out, stmt->data.input_stmt.index_expr);
+                fprintf(out, "input %s[%s]\n", stmt->data.input_stmt.name, idx);
+                free(idx);
+            } else {
+                fprintf(out, "input %s\n", stmt->data.input_stmt.name);
+            }
             break;
 
         case STMT_IF:

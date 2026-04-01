@@ -54,11 +54,9 @@ static RuntimeValue clone_runtime_value(const RuntimeValue *src) {
     v.num_val = src->num_val;
     v.char_val = src->char_val;
     v.str_val = NULL;
-
     if (src->type == TYPE_STRING && src->str_val != NULL) {
         v.str_val = strdup(src->str_val);
     }
-
     return v;
 }
 
@@ -70,6 +68,10 @@ static int truthy(RuntimeValue v) {
 
 static RuntimeValue eval_expr(ASTExpr *expr);
 static ExecResult exec_stmt(ASTStmt *stmt);
+
+static void build_indexed_name(char *buffer, size_t buffer_size, const char *base, int index) {
+    snprintf(buffer, buffer_size, "%s[%d]", base, index);
+}
 
 static RuntimeValue call_user_function(Symbol *f, ASTArgList *args) {
     RuntimeValue evaluated_args[MAX_PARAMS];
@@ -88,7 +90,6 @@ static RuntimeValue call_user_function(Symbol *f, ASTArgList *args) {
 
     for (i = 0; i < f->param_count && i < arg_count; i++) {
         declare_variable(f->param_names[i], f->param_types[i], SYM_PARAM);
-
         {
             Symbol *p = lookup_symbol_current_scope(f->param_names[i]);
             if (p != NULL) {
@@ -104,7 +105,6 @@ static RuntimeValue call_user_function(Symbol *f, ASTArgList *args) {
     }
 
     res = exec_stmt(f->function_body);
-
     if (res.has_return) {
         ret = clone_runtime_value(&res.value);
         free_runtime_value(&res.value);
@@ -122,7 +122,8 @@ static RuntimeValue call_user_function(Symbol *f, ASTArgList *args) {
 static RuntimeValue eval_expr(ASTExpr *expr) {
     RuntimeValue left, right, out;
     Symbol *s;
-    RuntimeValue a1, a2;
+    RuntimeValue a1, a2, idx_val;
+    int idx;
 
     if (expr == NULL) return make_unknown_value();
 
@@ -141,8 +142,23 @@ static RuntimeValue eval_expr(ASTExpr *expr) {
 
         case EXPR_IDENTIFIER:
             s = lookup_symbol(expr->data.sval);
-            if (s == NULL) return make_unknown_value();
+            if (s == NULL || s->is_array) return make_unknown_value();
             return clone_runtime_value(&s->value);
+
+        case EXPR_ARRAY_ACCESS:
+            s = lookup_symbol(expr->data.array_access.name);
+            if (s == NULL || !s->is_array) return make_unknown_value();
+
+            idx_val = eval_expr(expr->data.array_access.index_expr);
+            idx = (int)idx_val.num_val;
+            free_runtime_value(&idx_val);
+
+            if (idx < 0 || idx >= s->array_size) {
+                fprintf(stderr, "Runtime Error: array index out of bounds for %s\n", s->name);
+                return make_unknown_value();
+            }
+
+            return clone_runtime_value(&s->array_values[idx]);
 
         case EXPR_UNARY:
             out = eval_expr(expr->data.unary.operand);
@@ -161,49 +177,38 @@ static RuntimeValue eval_expr(ASTExpr *expr) {
                     out = make_numeric_value(arithmetic_result_type(left.type, right.type),
                                              left.num_val + right.num_val);
                     break;
-
                 case OP_SUB:
                     out = make_numeric_value(arithmetic_result_type(left.type, right.type),
                                              left.num_val - right.num_val);
                     break;
-
                 case OP_MUL:
                     out = make_numeric_value(arithmetic_result_type(left.type, right.type),
                                              left.num_val * right.num_val);
                     break;
-
                 case OP_DIV:
                     out = make_numeric_value(TYPE_FLOAT, left.num_val / right.num_val);
                     break;
-
                 case OP_MOD:
                     out = make_numeric_value(TYPE_INT, (int)left.num_val % (int)right.num_val);
                     break;
-
                 case OP_GT:
                     out = make_numeric_value(TYPE_INT, left.num_val > right.num_val);
                     break;
-
                 case OP_LT:
                     out = make_numeric_value(TYPE_INT, left.num_val < right.num_val);
                     break;
-
                 case OP_GEQ:
                     out = make_numeric_value(TYPE_INT, left.num_val >= right.num_val);
                     break;
-
                 case OP_LEQ:
                     out = make_numeric_value(TYPE_INT, left.num_val <= right.num_val);
                     break;
-
                 case OP_EQ:
                     out = make_numeric_value(TYPE_INT, fabs(left.num_val - right.num_val) < 1e-12);
                     break;
-
                 case OP_NEQ:
                     out = make_numeric_value(TYPE_INT, fabs(left.num_val - right.num_val) >= 1e-12);
                     break;
-
                 default:
                     break;
             }
@@ -257,18 +262,28 @@ static ExecResult exec_stmt_list(ASTStmt *stmt) {
 }
 
 static ExecResult exec_stmt(ASTStmt *stmt) {
-    RuntimeValue v;
+    RuntimeValue v, idx_val;
     Symbol *s;
     ExecResult r;
     char input_buf[1024];
     int int_input;
     double float_input;
     char char_input;
+    int idx;
+    char log_name[128];
 
     if (stmt == NULL) return make_exec_result(0, make_unknown_value());
 
     switch (stmt->kind) {
         case STMT_DECL:
+            if (stmt->data.decl.is_array) {
+                declare_array(stmt->data.decl.name,
+                              stmt->data.decl.decl_type,
+                              SYM_VAR,
+                              stmt->data.decl.array_size);
+                return make_exec_result(0, make_unknown_value());
+            }
+
             declare_variable(stmt->data.decl.name, stmt->data.decl.decl_type, SYM_VAR);
             s = lookup_symbol_current_scope(stmt->data.decl.name);
 
@@ -293,17 +308,48 @@ static ExecResult exec_stmt(ASTStmt *stmt) {
             s = lookup_symbol(stmt->data.assign.name);
 
             if (s != NULL) {
-                if (stmt->data.assign.assign_kind == TYPE_STRING) {
-                    set_symbol_string(s, stmt->data.assign.string_value);
-                    log_string_update(s->name, s->value.str_val);
-                } else if (stmt->data.assign.assign_kind == TYPE_CHAR) {
-                    set_symbol_char(s, stmt->data.assign.char_value);
-                    log_char_update(s->name, s->value.char_val);
+                if (stmt->data.assign.target_is_array) {
+                    idx_val = eval_expr(stmt->data.assign.index_expr);
+                    idx = (int)idx_val.num_val;
+                    free_runtime_value(&idx_val);
+
+                    if (!s->is_array) {
+                        fprintf(stderr, "Runtime Error: %s is not an array\n", s->name);
+                        return make_exec_result(0, make_unknown_value());
+                    }
+
+                    if (idx < 0 || idx >= s->array_size) {
+                        fprintf(stderr, "Runtime Error: array index out of bounds for %s\n", s->name);
+                        return make_exec_result(0, make_unknown_value());
+                    }
+
+                    build_indexed_name(log_name, sizeof(log_name), s->name, idx);
+
+                    if (stmt->data.assign.assign_kind == TYPE_STRING) {
+                        set_array_element_string(s, idx, stmt->data.assign.string_value);
+                        log_string_update(log_name, s->array_values[idx].str_val);
+                    } else if (stmt->data.assign.assign_kind == TYPE_CHAR) {
+                        set_array_element_char(s, idx, stmt->data.assign.char_value);
+                        log_char_update(log_name, s->array_values[idx].char_val);
+                    } else {
+                        v = eval_expr(stmt->data.assign.value_expr);
+                        set_array_element_numeric(s, idx, v.num_val);
+                        log_numeric_update(log_name, s->array_values[idx].num_val);
+                        free_runtime_value(&v);
+                    }
                 } else {
-                    v = eval_expr(stmt->data.assign.value_expr);
-                    set_symbol_numeric(s, v.num_val);
-                    log_numeric_update(s->name, s->value.num_val);
-                    free_runtime_value(&v);
+                    if (stmt->data.assign.assign_kind == TYPE_STRING) {
+                        set_symbol_string(s, stmt->data.assign.string_value);
+                        log_string_update(s->name, s->value.str_val);
+                    } else if (stmt->data.assign.assign_kind == TYPE_CHAR) {
+                        set_symbol_char(s, stmt->data.assign.char_value);
+                        log_char_update(s->name, s->value.char_val);
+                    } else {
+                        v = eval_expr(stmt->data.assign.value_expr);
+                        set_symbol_numeric(s, v.num_val);
+                        log_numeric_update(s->name, s->value.num_val);
+                        free_runtime_value(&v);
+                    }
                 }
             }
 
@@ -336,22 +382,58 @@ static ExecResult exec_stmt(ASTStmt *stmt) {
             s = lookup_symbol(stmt->data.input_stmt.name);
 
             if (s != NULL) {
-                if (s->type == TYPE_INT) {
-                    scanf("%d", &int_input);
-                    set_symbol_numeric(s, (double)int_input);
-                    log_numeric_update(s->name, s->value.num_val);
-                } else if (s->type == TYPE_FLOAT) {
-                    scanf("%lf", &float_input);
-                    set_symbol_numeric(s, float_input);
-                    log_numeric_update(s->name, s->value.num_val);
-                } else if (s->type == TYPE_STRING) {
-                    scanf("%1023s", input_buf);
-                    set_symbol_string(s, input_buf);
-                    log_string_update(s->name, s->value.str_val);
-                } else if (s->type == TYPE_CHAR) {
-                    scanf(" %c", &char_input);
-                    set_symbol_char(s, char_input);
-                    log_char_update(s->name, s->value.char_val);
+                if (stmt->data.input_stmt.target_is_array) {
+                    idx_val = eval_expr(stmt->data.input_stmt.index_expr);
+                    idx = (int)idx_val.num_val;
+                    free_runtime_value(&idx_val);
+
+                    if (!s->is_array) {
+                        fprintf(stderr, "Runtime Error: %s is not an array\n", s->name);
+                        return make_exec_result(0, make_unknown_value());
+                    }
+
+                    if (idx < 0 || idx >= s->array_size) {
+                        fprintf(stderr, "Runtime Error: array index out of bounds for %s\n", s->name);
+                        return make_exec_result(0, make_unknown_value());
+                    }
+
+                    build_indexed_name(log_name, sizeof(log_name), s->name, idx);
+
+                    if (s->type == TYPE_INT) {
+                        scanf("%d", &int_input);
+                        set_array_element_numeric(s, idx, (double)int_input);
+                        log_numeric_update(log_name, s->array_values[idx].num_val);
+                    } else if (s->type == TYPE_FLOAT) {
+                        scanf("%lf", &float_input);
+                        set_array_element_numeric(s, idx, float_input);
+                        log_numeric_update(log_name, s->array_values[idx].num_val);
+                    } else if (s->type == TYPE_STRING) {
+                        scanf("%1023s", input_buf);
+                        set_array_element_string(s, idx, input_buf);
+                        log_string_update(log_name, s->array_values[idx].str_val);
+                    } else if (s->type == TYPE_CHAR) {
+                        scanf(" %c", &char_input);
+                        set_array_element_char(s, idx, char_input);
+                        log_char_update(log_name, s->array_values[idx].char_val);
+                    }
+                } else {
+                    if (s->type == TYPE_INT) {
+                        scanf("%d", &int_input);
+                        set_symbol_numeric(s, (double)int_input);
+                        log_numeric_update(s->name, s->value.num_val);
+                    } else if (s->type == TYPE_FLOAT) {
+                        scanf("%lf", &float_input);
+                        set_symbol_numeric(s, float_input);
+                        log_numeric_update(s->name, s->value.num_val);
+                    } else if (s->type == TYPE_STRING) {
+                        scanf("%1023s", input_buf);
+                        set_symbol_string(s, input_buf);
+                        log_string_update(s->name, s->value.str_val);
+                    } else if (s->type == TYPE_CHAR) {
+                        scanf(" %c", &char_input);
+                        set_symbol_char(s, char_input);
+                        log_char_update(s->name, s->value.char_val);
+                    }
                 }
             }
 

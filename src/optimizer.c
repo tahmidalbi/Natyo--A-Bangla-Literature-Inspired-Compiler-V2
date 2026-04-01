@@ -25,7 +25,6 @@ static void replace_with_float(ASTExpr *expr, double value) {
 }
 
 static ASTExpr* optimize_expr(ASTExpr *expr);
-
 static void optimize_stmt_list(ASTStmt *stmt);
 
 static ASTExpr* optimize_expr(ASTExpr *expr) {
@@ -35,6 +34,10 @@ static ASTExpr* optimize_expr(ASTExpr *expr) {
     if (expr == NULL) return NULL;
 
     switch (expr->kind) {
+        case EXPR_ARRAY_ACCESS:
+            expr->data.array_access.index_expr = optimize_expr(expr->data.array_access.index_expr);
+            break;
+
         case EXPR_BINARY:
             expr->data.binary.left = optimize_expr(expr->data.binary.left);
             expr->data.binary.right = optimize_expr(expr->data.binary.right);
@@ -172,15 +175,26 @@ static void optimize_stmt(ASTStmt *stmt) {
 
     switch (stmt->kind) {
         case STMT_DECL:
-            stmt->data.decl.init_expr = optimize_expr(stmt->data.decl.init_expr);
+            if (!stmt->data.decl.is_array) {
+                stmt->data.decl.init_expr = optimize_expr(stmt->data.decl.init_expr);
+            }
             break;
 
         case STMT_ASSIGN:
             stmt->data.assign.value_expr = optimize_expr(stmt->data.assign.value_expr);
+            if (stmt->data.assign.target_is_array) {
+                stmt->data.assign.index_expr = optimize_expr(stmt->data.assign.index_expr);
+            }
             break;
 
         case STMT_PRINT:
             stmt->data.print_stmt.expr = optimize_expr(stmt->data.print_stmt.expr);
+            break;
+
+        case STMT_INPUT:
+            if (stmt->data.input_stmt.target_is_array) {
+                stmt->data.input_stmt.index_expr = optimize_expr(stmt->data.input_stmt.index_expr);
+            }
             break;
 
         case STMT_IF:
@@ -208,7 +222,6 @@ static void optimize_stmt(ASTStmt *stmt) {
             stmt->data.expr_stmt.expr = optimize_expr(stmt->data.expr_stmt.expr);
             break;
 
-        case STMT_INPUT:
         default:
             break;
     }

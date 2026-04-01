@@ -90,6 +90,8 @@ CHARLIT     \'([^\\\n]|(\\.))\'
 ","                         { return COMMA; }
 "("                         { return LPAREN; }
 ")"                         { return RPAREN; }
+"["                         { return LBRACKET; }
+"]"                         { return RBRACKET; }
 
 "PAI"                       { yylval.sval = strdup(yytext); return IDENTIFIER; }
 "E"                         { yylval.sval = strdup(yytext); return IDENTIFIER; }

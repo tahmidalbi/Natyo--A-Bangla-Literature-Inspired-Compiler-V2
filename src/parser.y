@@ -72,6 +72,7 @@ void semantic_error(const char *msg) {
 %token GT LT GEQ LEQ EQ NEQ
 %token SEMICOLON COMMA
 %token LPAREN RPAREN
+%token LBRACKET RBRACKET
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ONNOTHA
@@ -285,6 +286,15 @@ numeric_declarator
           }
           $$ = make_decl_stmt(current_decl_type, $1, $3.node);
       }
+    | IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+      {
+          if ($3 <= 0) {
+              semantic_error("array size must be positive");
+          } else if (!declare_array($1, current_decl_type, SYM_VAR, $3)) {
+              semantic_error("array redeclared in same scope");
+          }
+          $$ = make_array_decl_stmt(current_decl_type, $1, $3);
+      }
     ;
 
 string_declarator
@@ -301,6 +311,15 @@ string_declarator
               semantic_error("variable redeclared in same scope");
           }
           $$ = make_decl_string_stmt($1, $3);
+      }
+    | IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+      {
+          if ($3 <= 0) {
+              semantic_error("array size must be positive");
+          } else if (!declare_array($1, TYPE_STRING, SYM_VAR, $3)) {
+              semantic_error("array redeclared in same scope");
+          }
+          $$ = make_array_decl_stmt(TYPE_STRING, $1, $3);
       }
     ;
 
@@ -319,6 +338,15 @@ char_declarator
           }
           $$ = make_decl_char_stmt($1, $3);
       }
+    | IDENTIFIER LBRACKET INT_LITERAL RBRACKET
+      {
+          if ($3 <= 0) {
+              semantic_error("array size must be positive");
+          } else if (!declare_array($1, TYPE_CHAR, SYM_VAR, $3)) {
+              semantic_error("array redeclared in same scope");
+          }
+          $$ = make_array_decl_stmt(TYPE_CHAR, $1, $3);
+      }
     ;
 
 assignment
@@ -327,6 +355,8 @@ assignment
           Symbol *s = lookup_symbol($1);
           if (s == NULL) {
               semantic_error("assignment to undeclared variable");
+          } else if (s->is_array) {
+              semantic_error("array variable requires index for assignment");
           } else if (s->kind == SYM_CONST) {
               semantic_error("cannot modify constant");
           } else if (!can_assign(s->type, $3.type)) {
@@ -339,6 +369,8 @@ assignment
           Symbol *s = lookup_symbol($1);
           if (s == NULL) {
               semantic_error("assignment to undeclared variable");
+          } else if (s->is_array) {
+              semantic_error("array variable requires index for assignment");
           } else if (s->kind == SYM_CONST) {
               semantic_error("cannot modify constant");
           } else if (!can_assign(s->type, TYPE_STRING)) {
@@ -351,12 +383,56 @@ assignment
           Symbol *s = lookup_symbol($1);
           if (s == NULL) {
               semantic_error("assignment to undeclared variable");
+          } else if (s->is_array) {
+              semantic_error("array variable requires index for assignment");
           } else if (s->kind == SYM_CONST) {
               semantic_error("cannot modify constant");
           } else if (!can_assign(s->type, TYPE_CHAR)) {
               semantic_error("type mismatch in assignment");
           }
           $$ = make_assign_char_stmt($1, $3);
+      }
+    | IDENTIFIER LBRACKET expression RBRACKET ASSIGN expression
+      {
+          Symbol *s = lookup_symbol($1);
+          if (s == NULL) {
+              semantic_error("assignment to undeclared array");
+          } else if (!s->is_array) {
+              semantic_error("indexed assignment requires an array");
+          } else if ($3.type != TYPE_INT && $3.type != TYPE_UNKNOWN) {
+              semantic_error("array index must be integer");
+          } else if (!can_assign(s->type, $6.type)) {
+              semantic_error("type mismatch in array assignment");
+          }
+          $$ = make_array_assign_expr_stmt($1, $3.node, $6.node);
+      }
+    | IDENTIFIER LBRACKET expression RBRACKET ASSIGN STRING_LITERAL
+      {
+          Symbol *s = lookup_symbol($1);
+          if (s == NULL) {
+              semantic_error("assignment to undeclared array");
+          } else if (!s->is_array) {
+              semantic_error("indexed assignment requires an array");
+          } else if ($3.type != TYPE_INT && $3.type != TYPE_UNKNOWN) {
+              semantic_error("array index must be integer");
+          } else if (!can_assign(s->type, TYPE_STRING)) {
+              semantic_error("type mismatch in array assignment");
+          }
+          $$ = make_array_assign_string_stmt($1, $3.node, $6);
+      }
+    | IDENTIFIER LBRACKET expression RBRACKET ASSIGN CHAR_LITERAL
+      {
+          Symbol *s = lookup_symbol($1);
+          if (s == NULL) {
+              semantic_error("assignment to undeclared array");
+          } else if (!s->is_array) {
+              semantic_error("indexed assignment requires an array");
+          } else if ($3.type != TYPE_INT && $3.type != TYPE_UNKNOWN) {
+              semantic_error("array index must be integer");
+          } else if (!can_assign(s->type, TYPE_CHAR)) {
+              semantic_error("type mismatch in array assignment");
+          }
+          $$ = make_array_assign_char_stmt($1, $3.node, $6);
       }
     ;
 
@@ -378,10 +454,25 @@ print_stmt
 input_stmt
     : JOBDO IDENTIFIER
       {
-          if (lookup_symbol($2) == NULL) {
+          Symbol *s = lookup_symbol($2);
+          if (s == NULL) {
               semantic_error("input target is undeclared");
+          } else if (s->is_array) {
+              semantic_error("array input requires index");
           }
           $$ = make_input_stmt($2);
+      }
+    | JOBDO IDENTIFIER LBRACKET expression RBRACKET
+      {
+          Symbol *s = lookup_symbol($2);
+          if (s == NULL) {
+              semantic_error("input target array is undeclared");
+          } else if (!s->is_array) {
+              semantic_error("indexed input requires an array");
+          } else if ($4.type != TYPE_INT && $4.type != TYPE_UNKNOWN) {
+              semantic_error("array index must be integer");
+          }
+          $$ = make_array_input_stmt($2, $4.node);
       }
     ;
 
@@ -669,10 +760,30 @@ expression
           if (s == NULL) {
               semantic_error("use of undeclared variable");
               $$.type = TYPE_UNKNOWN;
+          } else if (s->is_array) {
+              semantic_error("array variable requires index");
+              $$.type = TYPE_UNKNOWN;
           } else {
               $$.type = s->type;
           }
           $$.node = make_identifier_expr($1);
+      }
+    | IDENTIFIER LBRACKET expression RBRACKET
+      {
+          Symbol *s = lookup_symbol($1);
+          if (s == NULL) {
+              semantic_error("use of undeclared array");
+              $$.type = TYPE_UNKNOWN;
+          } else if (!s->is_array) {
+              semantic_error("indexed access requires an array");
+              $$.type = TYPE_UNKNOWN;
+          } else if ($3.type != TYPE_INT && $3.type != TYPE_UNKNOWN) {
+              semantic_error("array index must be integer");
+              $$.type = TYPE_UNKNOWN;
+          } else {
+              $$.type = s->type;
+          }
+          $$.node = make_array_access_expr($1, $3.node);
       }
     ;
 

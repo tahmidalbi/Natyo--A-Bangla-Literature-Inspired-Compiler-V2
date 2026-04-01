@@ -57,6 +57,13 @@ ASTExpr* make_identifier_expr(char *name) {
     return e;
 }
 
+ASTExpr* make_array_access_expr(char *name, ASTExpr *index_expr) {
+    ASTExpr *e = alloc_expr(EXPR_ARRAY_ACCESS);
+    e->data.array_access.name = name;
+    e->data.array_access.index_expr = index_expr;
+    return e;
+}
+
 ASTExpr* make_binary_expr(OperatorKind op, ASTExpr *left, ASTExpr *right) {
     ASTExpr *e = alloc_expr(EXPR_BINARY);
     e->data.binary.op = op;
@@ -140,6 +147,21 @@ ASTStmt* make_decl_stmt(DataType decl_type, char *name, ASTExpr *init_expr) {
     s->data.decl.init_string = NULL;
     s->data.decl.init_char = '\0';
     s->data.decl.has_init = (init_expr != NULL);
+    s->data.decl.is_array = 0;
+    s->data.decl.array_size = 0;
+    return s;
+}
+
+ASTStmt* make_array_decl_stmt(DataType decl_type, char *name, int size) {
+    ASTStmt *s = alloc_stmt(STMT_DECL);
+    s->data.decl.decl_type = decl_type;
+    s->data.decl.name = name;
+    s->data.decl.init_expr = NULL;
+    s->data.decl.init_string = NULL;
+    s->data.decl.init_char = '\0';
+    s->data.decl.has_init = 0;
+    s->data.decl.is_array = 1;
+    s->data.decl.array_size = size;
     return s;
 }
 
@@ -151,6 +173,8 @@ ASTStmt* make_decl_string_stmt(char *name, char *value) {
     s->data.decl.init_string = value;
     s->data.decl.init_char = '\0';
     s->data.decl.has_init = 1;
+    s->data.decl.is_array = 0;
+    s->data.decl.array_size = 0;
     return s;
 }
 
@@ -162,6 +186,8 @@ ASTStmt* make_decl_char_stmt(char *name, char value) {
     s->data.decl.init_string = NULL;
     s->data.decl.init_char = value;
     s->data.decl.has_init = 1;
+    s->data.decl.is_array = 0;
+    s->data.decl.array_size = 0;
     return s;
 }
 
@@ -172,6 +198,20 @@ ASTStmt* make_assign_expr_stmt(char *name, ASTExpr *expr) {
     s->data.assign.string_value = NULL;
     s->data.assign.char_value = '\0';
     s->data.assign.assign_kind = TYPE_UNKNOWN;
+    s->data.assign.target_is_array = 0;
+    s->data.assign.index_expr = NULL;
+    return s;
+}
+
+ASTStmt* make_array_assign_expr_stmt(char *name, ASTExpr *index_expr, ASTExpr *expr) {
+    ASTStmt *s = alloc_stmt(STMT_ASSIGN);
+    s->data.assign.name = name;
+    s->data.assign.value_expr = expr;
+    s->data.assign.string_value = NULL;
+    s->data.assign.char_value = '\0';
+    s->data.assign.assign_kind = TYPE_UNKNOWN;
+    s->data.assign.target_is_array = 1;
+    s->data.assign.index_expr = index_expr;
     return s;
 }
 
@@ -182,6 +222,20 @@ ASTStmt* make_assign_string_stmt(char *name, char *value) {
     s->data.assign.string_value = value;
     s->data.assign.char_value = '\0';
     s->data.assign.assign_kind = TYPE_STRING;
+    s->data.assign.target_is_array = 0;
+    s->data.assign.index_expr = NULL;
+    return s;
+}
+
+ASTStmt* make_array_assign_string_stmt(char *name, ASTExpr *index_expr, char *value) {
+    ASTStmt *s = alloc_stmt(STMT_ASSIGN);
+    s->data.assign.name = name;
+    s->data.assign.value_expr = NULL;
+    s->data.assign.string_value = value;
+    s->data.assign.char_value = '\0';
+    s->data.assign.assign_kind = TYPE_STRING;
+    s->data.assign.target_is_array = 1;
+    s->data.assign.index_expr = index_expr;
     return s;
 }
 
@@ -192,6 +246,20 @@ ASTStmt* make_assign_char_stmt(char *name, char value) {
     s->data.assign.string_value = NULL;
     s->data.assign.char_value = value;
     s->data.assign.assign_kind = TYPE_CHAR;
+    s->data.assign.target_is_array = 0;
+    s->data.assign.index_expr = NULL;
+    return s;
+}
+
+ASTStmt* make_array_assign_char_stmt(char *name, ASTExpr *index_expr, char value) {
+    ASTStmt *s = alloc_stmt(STMT_ASSIGN);
+    s->data.assign.name = name;
+    s->data.assign.value_expr = NULL;
+    s->data.assign.string_value = NULL;
+    s->data.assign.char_value = value;
+    s->data.assign.assign_kind = TYPE_CHAR;
+    s->data.assign.target_is_array = 1;
+    s->data.assign.index_expr = index_expr;
     return s;
 }
 
@@ -225,6 +293,16 @@ ASTStmt* make_print_char_stmt(char value) {
 ASTStmt* make_input_stmt(char *name) {
     ASTStmt *s = alloc_stmt(STMT_INPUT);
     s->data.input_stmt.name = name;
+    s->data.input_stmt.target_is_array = 0;
+    s->data.input_stmt.index_expr = NULL;
+    return s;
+}
+
+ASTStmt* make_array_input_stmt(char *name, ASTExpr *index_expr) {
+    ASTStmt *s = alloc_stmt(STMT_INPUT);
+    s->data.input_stmt.name = name;
+    s->data.input_stmt.target_is_array = 1;
+    s->data.input_stmt.index_expr = index_expr;
     return s;
 }
 
@@ -318,6 +396,7 @@ ASTTopLevel* append_top(ASTTopLevel *list, ASTTopLevel *item) {
 
 void free_expr(ASTExpr *expr) {
     ASTArgList *a, *next_arg;
+
     if (expr == NULL) return;
 
     switch (expr->kind) {
@@ -325,13 +404,21 @@ void free_expr(ASTExpr *expr) {
         case EXPR_IDENTIFIER:
             free(expr->data.sval);
             break;
+
+        case EXPR_ARRAY_ACCESS:
+            free(expr->data.array_access.name);
+            free_expr(expr->data.array_access.index_expr);
+            break;
+
         case EXPR_BINARY:
             free_expr(expr->data.binary.left);
             free_expr(expr->data.binary.right);
             break;
+
         case EXPR_UNARY:
             free_expr(expr->data.unary.operand);
             break;
+
         case EXPR_CALL:
             free(expr->data.call.name);
             a = expr->data.call.args;
@@ -342,13 +429,16 @@ void free_expr(ASTExpr *expr) {
                 a = next_arg;
             }
             break;
+
         case EXPR_BUILTIN_SHAKTI:
             free_expr(expr->data.shakti.base);
             free_expr(expr->data.shakti.power);
             break;
+
         case EXPR_BUILTIN_BORGOMUL:
             free_expr(expr->data.borgomul.value);
             break;
+
         default:
             break;
     }
@@ -358,6 +448,7 @@ void free_expr(ASTExpr *expr) {
 
 void free_stmt(ASTStmt *stmt) {
     ASTStmt *next_stmt;
+
     if (stmt == NULL) return;
 
     while (stmt != NULL) {
@@ -369,36 +460,46 @@ void free_stmt(ASTStmt *stmt) {
                 free_expr(stmt->data.decl.init_expr);
                 free(stmt->data.decl.init_string);
                 break;
+
             case STMT_ASSIGN:
                 free(stmt->data.assign.name);
                 free_expr(stmt->data.assign.value_expr);
                 free(stmt->data.assign.string_value);
+                free_expr(stmt->data.assign.index_expr);
                 break;
+
             case STMT_PRINT:
                 free_expr(stmt->data.print_stmt.expr);
                 free(stmt->data.print_stmt.string_literal);
                 break;
+
             case STMT_INPUT:
                 free(stmt->data.input_stmt.name);
+                free_expr(stmt->data.input_stmt.index_expr);
                 break;
+
             case STMT_IF:
                 free_expr(stmt->data.if_stmt.condition);
                 free_stmt(stmt->data.if_stmt.then_branch);
                 free_stmt(stmt->data.if_stmt.else_branch);
                 break;
+
             case STMT_LOOP:
                 free_stmt(stmt->data.loop_stmt.init_assign);
                 free_expr(stmt->data.loop_stmt.condition);
                 free_stmt(stmt->data.loop_stmt.update_assign);
                 free_stmt(stmt->data.loop_stmt.body);
                 break;
+
             case STMT_BLOCK:
                 free_stmt(stmt->data.block_stmt.statements);
                 break;
+
             case STMT_RETURN:
                 free_expr(stmt->data.return_stmt.expr);
                 free(stmt->data.return_stmt.string_literal);
                 break;
+
             case STMT_EXPR:
                 free_expr(stmt->data.expr_stmt.expr);
                 break;

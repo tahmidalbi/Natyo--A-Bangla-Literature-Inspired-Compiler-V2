@@ -1,43 +1,171 @@
 prostabona
 
+$$ =========================
+$$ Function definition
+$$ =========================
 drissho jog(x, y)
 shuru
     pherot x + y;
 shesh
 
+$$ =========================
+$$ Scalar declarations
+$$ =========================
 shonkhya a = 5;
 purnoshonkhya b = 3.5;
 bakkyo msg = "Hello";
 okkhyor c = 'A';
 
+$$ =========================
+$$ Array declarations
+$$ =========================
+purnoshonkhya arr[5];
+purnoshonkhya farr[3];
+bakkyo texts[2];
+okkhyor chars[2];
+
+$$ =========================
+$$ Scalar assignments
+$$ =========================
 a = 10;
 b = a + b;
 
+$$ =========================
+$$ Array assignments
+$$ =========================
+arr[0] = 10;
+arr[1] = 20;
+arr[2] = arr[0] + arr[1];
+arr[3] = 8;
+arr[4] = 4;
+
+farr[0] = 3.5;
+farr[1] = shakti(3, 2);
+farr[2] = borgomul(25);
+
+texts[0] = "Natyo";
+texts[1] = "Compiler";
+
+chars[0] = 'X';
+chars[1] = 'Y';
+
+$$ =========================
+$$ Scalar printing
+$$ =========================
 shobdo a;
 shobdo b;
 shobdo msg;
 shobdo c;
 
-jodi (a < 20)
+$$ =========================
+$$ Constant printing
+$$ =========================
+shobdo PAI;
+shobdo E;
+shobdo G;
+
+$$ =========================
+$$ Intrinsic functions
+$$ =========================
+shobdo shakti(3, 2);
+shobdo borgomul(16);
+
+$$ =========================
+$$ Function call
+$$ =========================
+shobdo jog(4, 6);
+
+$$ =========================
+$$ If / else
+$$ =========================
+jodi (a > 20)
 shuru
     shobdo 1;
 shesh
 onnotha
 shuru
-    shobdo 0;
+    shobdo -2;
 shesh
 
+$$ =========================
+$$ Else-if style using nested jodi
+$$ =========================
+a = 9;
+jodi (a > 10)
+shuru
+    shobdo 1;
+shesh
+onnotha
+    jodi (a > 5)
+    shuru
+        shobdo 2;
+    shesh
+    onnotha
+    shuru
+        shobdo 3;
+    shesh
+
+$$ =========================
+$$ Normal loop
+$$ =========================
 chokro (a = 0; a < 3; a = a + 1)
 shuru
     shobdo a;
 shesh
 
-shobdo jog(4, 6);
-shobdo shakti(3, 2);
-shobdo borgomul(16);
-shobdo PAI;
+$$ =========================
+$$ Loop over integer array
+$$ =========================
+shonkhya i = 0;
+chokro (i = 0; i < 5; i = i + 1)
+shuru
+    shobdo arr[i];
+shesh
+
+$$ =========================
+$$ Loop over float array
+$$ =========================
+chokro (i = 0; i < 3; i = i + 1)
+shuru
+    shobdo farr[i];
+shesh
+
+$$ =========================
+$$ Direct array element printing
+$$ =========================
+shobdo texts[0];
+shobdo texts[1];
+shobdo chars[0];
+shobdo chars[1];
+
+$$ =========================
+$$ Scalar input
+$$ =========================
 shonkhya q;
 jobdo q;
 shobdo q;
+
+$$ =========================
+$$ Array input
+$$ =========================
+jobdo arr[2];
+shobdo arr[2];
+
+$$ =========================
+$$ Single-line comment demo
+$$ =========================
+$$ shobdo 999;
+
+$$ =========================
+$$ Multi-line comment demo
+$$ =========================
+$*
+This block is ignored.
+shobdo 111;
+arr[0] = 999;
+*$
+
+$$ Still executed
+shobdo 1;
 
 uposhonghar

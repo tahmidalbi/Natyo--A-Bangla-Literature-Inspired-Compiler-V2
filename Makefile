@@ -20,5 +20,8 @@ lex.yy.c: src/lexer.l parser.tab.h
 run:
 	.\$(TARGET).exe tests\phase4_valid.nt
 
+run-array:
+	.\$(TARGET).exe tests\test_array.nt
+
 clean:
 	del /Q lex.yy.c parser.tab.c parser.tab.h $(TARGET).exe history_log.txt tac_output.txt 2>nul || exit 0

@@ -9,6 +9,7 @@ typedef enum {
     EXPR_CHAR,
     EXPR_STRING,
     EXPR_IDENTIFIER,
+    EXPR_ARRAY_ACCESS,
     EXPR_BINARY,
     EXPR_UNARY,
     EXPR_CALL,
@@ -70,6 +71,11 @@ struct ASTExpr {
         char *sval;
 
         struct {
+            char *name;
+            ASTExpr *index_expr;
+        } array_access;
+
+        struct {
             OperatorKind op;
             ASTExpr *left;
             ASTExpr *right;
@@ -108,6 +114,8 @@ struct ASTStmt {
             char *init_string;
             char init_char;
             int has_init;
+            int is_array;
+            int array_size;
         } decl;
 
         struct {
@@ -116,6 +124,8 @@ struct ASTStmt {
             char *string_value;
             char char_value;
             DataType assign_kind;
+            int target_is_array;
+            ASTExpr *index_expr;
         } assign;
 
         struct {
@@ -127,6 +137,8 @@ struct ASTStmt {
 
         struct {
             char *name;
+            int target_is_array;
+            ASTExpr *index_expr;
         } input_stmt;
 
         struct {
@@ -183,6 +195,7 @@ ASTExpr* make_float_expr(double value);
 ASTExpr* make_char_expr(char value);
 ASTExpr* make_string_expr(char *value);
 ASTExpr* make_identifier_expr(char *name);
+ASTExpr* make_array_access_expr(char *name, ASTExpr *index_expr);
 ASTExpr* make_binary_expr(OperatorKind op, ASTExpr *left, ASTExpr *right);
 ASTExpr* make_unary_expr(OperatorKind op, ASTExpr *operand);
 ASTExpr* make_call_expr(char *name, ASTArgList *args);
@@ -196,18 +209,24 @@ ASTIdentifierList* make_identifier_list(char *name);
 ASTIdentifierList* append_identifier(ASTIdentifierList *list, char *name);
 
 ASTStmt* make_decl_stmt(DataType decl_type, char *name, ASTExpr *init_expr);
+ASTStmt* make_array_decl_stmt(DataType decl_type, char *name, int size);
 ASTStmt* make_decl_string_stmt(char *name, char *value);
 ASTStmt* make_decl_char_stmt(char *name, char value);
 
 ASTStmt* make_assign_expr_stmt(char *name, ASTExpr *expr);
+ASTStmt* make_array_assign_expr_stmt(char *name, ASTExpr *index_expr, ASTExpr *expr);
 ASTStmt* make_assign_string_stmt(char *name, char *value);
+ASTStmt* make_array_assign_string_stmt(char *name, ASTExpr *index_expr, char *value);
 ASTStmt* make_assign_char_stmt(char *name, char value);
+ASTStmt* make_array_assign_char_stmt(char *name, ASTExpr *index_expr, char value);
 
 ASTStmt* make_print_expr_stmt(ASTExpr *expr);
 ASTStmt* make_print_string_stmt(char *value);
 ASTStmt* make_print_char_stmt(char value);
 
 ASTStmt* make_input_stmt(char *name);
+ASTStmt* make_array_input_stmt(char *name, ASTExpr *index_expr);
+
 ASTStmt* make_if_stmt(ASTExpr *condition, ASTStmt *then_branch, ASTStmt *else_branch);
 ASTStmt* make_loop_stmt(ASTStmt *init_assign, ASTExpr *condition, ASTStmt *update_assign, ASTStmt *body);
 ASTStmt* make_block_stmt(ASTStmt *statements);
