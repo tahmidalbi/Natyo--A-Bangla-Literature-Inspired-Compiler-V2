@@ -1,41 +1,43 @@
 ----- THREE ADDRESS CODE (TAC) -----
+
+func jog:
+t1 = x + y
+return t1
+endfunc
 a = 5
 b = 3.500000
 msg = "Hello"
 c = 'A'
 a = 10
-t1 = a + b
-b = t1
-t2 = shakti(a, 2)
+t2 = a + b
 b = t2
-b = 5.000000
-
-func jog:
-z = 10
-t3 = x + y
-return t3
-endfunc
 print a
 print b
 print msg
 print c
-print PAI
-t4 = a < 20
-if t4 goto L1
+t3 = a < 20
+if t3 goto L1
 goto L2
 L1:
-temp = 1
-print temp
+print 1
 goto L3
 L2:
-print a
+print 0
 L3:
 a = 0
 L4:
-t5 = a < 3
-ifFalse t5 goto L5
+t4 = a < 3
+ifFalse t4 goto L5
 print a
-t6 = a + 1
-a = t6
+t5 = a + 1
+a = t5
 goto L4
 L5:
+t6 = call jog(4, 6)
+print t6
+print 9.000000
+print 4.000000
+print PAI
+declare q
+input q
+print q

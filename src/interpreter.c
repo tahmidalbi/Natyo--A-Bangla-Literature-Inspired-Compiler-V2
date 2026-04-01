@@ -54,9 +54,11 @@ static RuntimeValue clone_runtime_value(const RuntimeValue *src) {
     v.num_val = src->num_val;
     v.char_val = src->char_val;
     v.str_val = NULL;
+
     if (src->type == TYPE_STRING && src->str_val != NULL) {
         v.str_val = strdup(src->str_val);
     }
+
     return v;
 }
 
@@ -71,20 +73,22 @@ static ExecResult exec_stmt(ASTStmt *stmt);
 
 static RuntimeValue call_user_function(Symbol *f, ASTArgList *args) {
     RuntimeValue evaluated_args[MAX_PARAMS];
-    int i = 0;
+    int arg_count = 0;
     ASTArgList *cur = args;
     ExecResult res;
     RuntimeValue ret = make_unknown_value();
+    int i;
 
-    while (cur != NULL && i < MAX_PARAMS) {
-        evaluated_args[i++] = eval_expr(cur->expr);
+    while (cur != NULL && arg_count < MAX_PARAMS) {
+        evaluated_args[arg_count++] = eval_expr(cur->expr);
         cur = cur->next;
     }
 
     enter_scope();
 
-    for (i = 0; i < f->param_count; i++) {
+    for (i = 0; i < f->param_count && i < arg_count; i++) {
         declare_variable(f->param_names[i], f->param_types[i], SYM_PARAM);
+
         {
             Symbol *p = lookup_symbol_current_scope(f->param_names[i]);
             if (p != NULL) {
@@ -100,6 +104,7 @@ static RuntimeValue call_user_function(Symbol *f, ASTArgList *args) {
     }
 
     res = exec_stmt(f->function_body);
+
     if (res.has_return) {
         ret = clone_runtime_value(&res.value);
         free_runtime_value(&res.value);
@@ -107,7 +112,7 @@ static RuntimeValue call_user_function(Symbol *f, ASTArgList *args) {
 
     exit_scope();
 
-    for (i = 0; i < f->param_count; i++) {
+    for (i = 0; i < arg_count; i++) {
         free_runtime_value(&evaluated_args[i]);
     }
 
@@ -118,7 +123,6 @@ static RuntimeValue eval_expr(ASTExpr *expr) {
     RuntimeValue left, right, out;
     Symbol *s;
     RuntimeValue a1, a2;
-    ASTArgList *args;
 
     if (expr == NULL) return make_unknown_value();
 
@@ -154,38 +158,52 @@ static RuntimeValue eval_expr(ASTExpr *expr) {
 
             switch (expr->data.binary.op) {
                 case OP_ADD:
-                    out = make_numeric_value(arithmetic_result_type(left.type, right.type), left.num_val + right.num_val);
+                    out = make_numeric_value(arithmetic_result_type(left.type, right.type),
+                                             left.num_val + right.num_val);
                     break;
+
                 case OP_SUB:
-                    out = make_numeric_value(arithmetic_result_type(left.type, right.type), left.num_val - right.num_val);
+                    out = make_numeric_value(arithmetic_result_type(left.type, right.type),
+                                             left.num_val - right.num_val);
                     break;
+
                 case OP_MUL:
-                    out = make_numeric_value(arithmetic_result_type(left.type, right.type), left.num_val * right.num_val);
+                    out = make_numeric_value(arithmetic_result_type(left.type, right.type),
+                                             left.num_val * right.num_val);
                     break;
+
                 case OP_DIV:
                     out = make_numeric_value(TYPE_FLOAT, left.num_val / right.num_val);
                     break;
+
                 case OP_MOD:
                     out = make_numeric_value(TYPE_INT, (int)left.num_val % (int)right.num_val);
                     break;
+
                 case OP_GT:
                     out = make_numeric_value(TYPE_INT, left.num_val > right.num_val);
                     break;
+
                 case OP_LT:
                     out = make_numeric_value(TYPE_INT, left.num_val < right.num_val);
                     break;
+
                 case OP_GEQ:
                     out = make_numeric_value(TYPE_INT, left.num_val >= right.num_val);
                     break;
+
                 case OP_LEQ:
                     out = make_numeric_value(TYPE_INT, left.num_val <= right.num_val);
                     break;
+
                 case OP_EQ:
                     out = make_numeric_value(TYPE_INT, fabs(left.num_val - right.num_val) < 1e-12);
                     break;
+
                 case OP_NEQ:
                     out = make_numeric_value(TYPE_INT, fabs(left.num_val - right.num_val) >= 1e-12);
                     break;
+
                 default:
                     break;
             }
@@ -213,8 +231,7 @@ static RuntimeValue eval_expr(ASTExpr *expr) {
             if (s == NULL || s->function_body == NULL) {
                 return make_unknown_value();
             }
-            args = expr->data.call.args;
-            return call_user_function(s, args);
+            return call_user_function(s, expr->data.call.args);
     }
 
     return make_unknown_value();
@@ -242,8 +259,11 @@ static ExecResult exec_stmt_list(ASTStmt *stmt) {
 static ExecResult exec_stmt(ASTStmt *stmt) {
     RuntimeValue v;
     Symbol *s;
-    char input_buf[1024];
     ExecResult r;
+    char input_buf[1024];
+    int int_input;
+    double float_input;
+    char char_input;
 
     if (stmt == NULL) return make_exec_result(0, make_unknown_value());
 
@@ -251,6 +271,7 @@ static ExecResult exec_stmt(ASTStmt *stmt) {
         case STMT_DECL:
             declare_variable(stmt->data.decl.name, stmt->data.decl.decl_type, SYM_VAR);
             s = lookup_symbol_current_scope(stmt->data.decl.name);
+
             if (s != NULL && stmt->data.decl.has_init) {
                 if (stmt->data.decl.decl_type == TYPE_STRING) {
                     set_symbol_string(s, stmt->data.decl.init_string);
@@ -265,10 +286,12 @@ static ExecResult exec_stmt(ASTStmt *stmt) {
                     free_runtime_value(&v);
                 }
             }
+
             return make_exec_result(0, make_unknown_value());
 
         case STMT_ASSIGN:
             s = lookup_symbol(stmt->data.assign.name);
+
             if (s != NULL) {
                 if (stmt->data.assign.assign_kind == TYPE_STRING) {
                     set_symbol_string(s, stmt->data.assign.string_value);
@@ -283,6 +306,7 @@ static ExecResult exec_stmt(ASTStmt *stmt) {
                     free_runtime_value(&v);
                 }
             }
+
             return make_exec_result(0, make_unknown_value());
 
         case STMT_PRINT:
@@ -292,6 +316,7 @@ static ExecResult exec_stmt(ASTStmt *stmt) {
                 printf("%c\n", stmt->data.print_stmt.char_literal);
             } else {
                 v = eval_expr(stmt->data.print_stmt.expr);
+
                 if (v.type == TYPE_INT) {
                     printf("%d\n", (int)v.num_val);
                 } else if (v.type == TYPE_FLOAT) {
@@ -301,28 +326,40 @@ static ExecResult exec_stmt(ASTStmt *stmt) {
                 } else if (v.type == TYPE_CHAR) {
                     printf("%c\n", v.char_val);
                 }
+
                 free_runtime_value(&v);
             }
+
             return make_exec_result(0, make_unknown_value());
 
         case STMT_INPUT:
             s = lookup_symbol(stmt->data.input_stmt.name);
+
             if (s != NULL) {
                 if (s->type == TYPE_INT) {
-                    scanf("%d", (int *)&s->value.num_val);
+                    scanf("%d", &int_input);
+                    set_symbol_numeric(s, (double)int_input);
+                    log_numeric_update(s->name, s->value.num_val);
                 } else if (s->type == TYPE_FLOAT) {
-                    scanf("%lf", &s->value.num_val);
+                    scanf("%lf", &float_input);
+                    set_symbol_numeric(s, float_input);
+                    log_numeric_update(s->name, s->value.num_val);
                 } else if (s->type == TYPE_STRING) {
                     scanf("%1023s", input_buf);
                     set_symbol_string(s, input_buf);
+                    log_string_update(s->name, s->value.str_val);
                 } else if (s->type == TYPE_CHAR) {
-                    scanf(" %c", &s->value.char_val);
+                    scanf(" %c", &char_input);
+                    set_symbol_char(s, char_input);
+                    log_char_update(s->name, s->value.char_val);
                 }
             }
+
             return make_exec_result(0, make_unknown_value());
 
         case STMT_IF:
             v = eval_expr(stmt->data.if_stmt.condition);
+
             if (truthy(v)) {
                 free_runtime_value(&v);
                 return exec_stmt(stmt->data.if_stmt.then_branch);
@@ -330,22 +367,29 @@ static ExecResult exec_stmt(ASTStmt *stmt) {
                 free_runtime_value(&v);
                 return exec_stmt(stmt->data.if_stmt.else_branch);
             }
+
             free_runtime_value(&v);
             return make_exec_result(0, make_unknown_value());
 
         case STMT_LOOP:
             exec_stmt(stmt->data.loop_stmt.init_assign);
+
             while (1) {
                 v = eval_expr(stmt->data.loop_stmt.condition);
+
                 if (!truthy(v)) {
                     free_runtime_value(&v);
                     break;
                 }
+
                 free_runtime_value(&v);
+
                 r = exec_stmt(stmt->data.loop_stmt.body);
                 if (r.has_return) return r;
+
                 exec_stmt(stmt->data.loop_stmt.update_assign);
             }
+
             return make_exec_result(0, make_unknown_value());
 
         case STMT_BLOCK:

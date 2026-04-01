@@ -2,13 +2,18 @@ $$ valid semantic program
 
 prostabona
 
-shonkhya a = 5;
-purnoshonkhya b = 3.5;
-bakkyo msg = "Hello";
-okkhyor c = 'A';
+shonkhya a;
+jobdo a;
+purnoshonkhya b;
+jobdo b;
+bakkyo msg;
+jobdo msg;
+okkhyor c;
+jobdo c;
 
 a = 10;
 b = a + b;
+shobdo b;
 b = shakti(a, 2);
 b = borgomul(25);
 
@@ -38,5 +43,15 @@ chokro (a = 0; a < 3; a = a + 1)
 shuru
     shobdo a;
 shesh
+
+shonkhya x;
+shonkhya y;
+jobdo x;
+
+jobdo y;
+
+shonkhya d=x+y;
+
+shobdo d;
 
 uposhonghar
